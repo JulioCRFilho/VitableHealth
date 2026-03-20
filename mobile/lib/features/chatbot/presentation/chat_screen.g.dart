@@ -13,7 +13,11 @@ part of 'chat_screen.dart';
 final chatProvider = ChatNotifierProvider._();
 
 final class ChatNotifierProvider
-    extends $NotifierProvider<ChatNotifier, List<Map<String, dynamic>>> {
+    extends
+        $NotifierProvider<
+          ChatNotifier,
+          ({bool isTyping, List<ChatMessage> messages})
+        > {
   ChatNotifierProvider._()
     : super(
         from: null,
@@ -33,32 +37,41 @@ final class ChatNotifierProvider
   ChatNotifier create() => ChatNotifier();
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(List<Map<String, dynamic>> value) {
+  Override overrideWithValue(
+    ({bool isTyping, List<ChatMessage> messages}) value,
+  ) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<List<Map<String, dynamic>>>(value),
+      providerOverride:
+          $SyncValueProvider<({bool isTyping, List<ChatMessage> messages})>(
+            value,
+          ),
     );
   }
 }
 
-String _$chatNotifierHash() => r'2bf96239be9d571244da474bb0a1cf6704a74939';
+String _$chatNotifierHash() => r'aefaa1d78e4b60f61e96ffdcd71161b760e36f19';
 
-abstract class _$ChatNotifier extends $Notifier<List<Map<String, dynamic>>> {
-  List<Map<String, dynamic>> build();
+abstract class _$ChatNotifier
+    extends $Notifier<({bool isTyping, List<ChatMessage> messages})> {
+  ({bool isTyping, List<ChatMessage> messages}) build();
   @$mustCallSuper
   @override
   void runBuild() {
     final ref =
         this.ref
-            as $Ref<List<Map<String, dynamic>>, List<Map<String, dynamic>>>;
+            as $Ref<
+              ({bool isTyping, List<ChatMessage> messages}),
+              ({bool isTyping, List<ChatMessage> messages})
+            >;
     final element =
         ref.element
             as $ClassProviderElement<
               AnyNotifier<
-                List<Map<String, dynamic>>,
-                List<Map<String, dynamic>>
+                ({bool isTyping, List<ChatMessage> messages}),
+                ({bool isTyping, List<ChatMessage> messages})
               >,
-              List<Map<String, dynamic>>,
+              ({bool isTyping, List<ChatMessage> messages}),
               Object?,
               Object?
             >;
