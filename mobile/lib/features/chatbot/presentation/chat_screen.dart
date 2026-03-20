@@ -772,14 +772,18 @@ class _TypingIndicatorBubble extends ConsumerWidget {
 // --------------------------------------------------------------------------
 // Quick reply chips
 // --------------------------------------------------------------------------
-class _QuickReplies extends StatelessWidget {
+class _QuickReplies extends ConsumerWidget {
   final List<String> replies;
   final void Function(String) onTap;
 
   const _QuickReplies({required this.replies, required this.onTap});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isHighContrast = ref.watch(highContrastProvider);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Semantics(
       label: 'Quick reply suggestions',
       child: Padding(
@@ -798,17 +802,24 @@ class _QuickReplies extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.08),
+                        color: isHighContrast
+                            ? (isDark ? Colors.black : Colors.white)
+                            : AppColors.primary.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: AppColors.primary.withValues(alpha: 0.35),
+                          color: isHighContrast
+                              ? (isDark ? Colors.white : Colors.black)
+                              : AppColors.primary.withValues(alpha: 0.35),
+                          width: isHighContrast ? 2 : 1,
                         ),
                       ),
                       child: Text(
                         r,
                         style:
                             Theme.of(context).textTheme.labelMedium?.copyWith(
-                                  color: AppColors.primary,
+                                  color: isHighContrast
+                                      ? (isDark ? Colors.white : Colors.black)
+                                      : AppColors.primary,
                                   fontWeight: FontWeight.w600,
                                 ),
                       ),
