@@ -8,6 +8,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/design/colors/app_colors.dart';
 import '../application/chat_service.dart';
+import '../../identity/application/auth_notifier.dart';
 
 part 'chat_screen.g.dart';
 
@@ -52,12 +53,17 @@ class ChatNotifier extends _$ChatNotifier {
     );
 
     final chatService = ref.read(chatServiceProvider);
-    final botReply = await chatService.sendMessage(trimmed);
+    final result = await chatService.sendMessage(trimmed);
+
+    // If a token was returned (e.g. after login), persist it
+    if (result.token != null) {
+      await ref.read(authProvider.notifier).login(result.token!);
+    }
 
     state = (
       messages: [
         ...state.messages,
-        ChatMessage(text: botReply, isBot: true),
+        ChatMessage(text: result.response, isBot: true),
       ],
       isTyping: false,
     );

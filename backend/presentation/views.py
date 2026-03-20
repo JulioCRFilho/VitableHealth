@@ -28,7 +28,13 @@ class ChatView(APIView):
         service = GeminiService(user_id=user_id)
         response_text = service.send_message(message, history=history)
         
+        # If the service now has a user_id (e.g. after login), generate a token
+        token = None
+        if service.user_id:
+            token = SecurityHelper.generate_jwt(service.user_id, settings.SECRET_KEY)
+        
         return Response({
             'response': response_text,
-            'user_id': service.user_id # Return potentially updated user_id (e.g. after login)
+            'user_id': service.user_id,
+            'token': token
         })
