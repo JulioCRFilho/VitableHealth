@@ -80,7 +80,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# lib/ - Removed to avoid ignoring Flutter's lib directory. Use specific paths if needed.
 lib64/
 parts/
 sdist/
