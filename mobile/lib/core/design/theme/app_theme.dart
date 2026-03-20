@@ -88,4 +88,48 @@ class AppTheme {
       ),
     );
   }
+
+  static ThemeData get highContrastLightTheme {
+    return lightTheme.copyWith(
+      scaffoldBackgroundColor: AppColors.backgroundHighContrastLight,
+      colorScheme: const ColorScheme.light(
+        primary: AppColors.primaryHighContrast,
+        secondary: AppColors.primaryHighContrast,
+        surface: AppColors.backgroundHighContrastLight,
+        error: Colors.redAccent,
+      ),
+      textTheme: lightTheme.textTheme.apply(
+        bodyColor: AppColors.textPrimaryHighContrastLight,
+        displayColor: AppColors.textPrimaryHighContrastLight,
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: AppColors.backgroundHighContrastLight,
+        foregroundColor: AppColors.textPrimaryHighContrastLight,
+        elevation: 1, // Added elevation for better separation
+        centerTitle: true,
+      ),
+    );
+  }
+
+  static ThemeData get highContrastDarkTheme {
+    return darkTheme.copyWith(
+      scaffoldBackgroundColor: AppColors.backgroundHighContrastDark,
+      colorScheme: const ColorScheme.dark(
+        primary: AppColors.textPrimaryHighContrastDark,
+        secondary: AppColors.textPrimaryHighContrastDark,
+        surface: AppColors.backgroundHighContrastDark,
+        error: Colors.redAccent,
+      ),
+      textTheme: darkTheme.textTheme.apply(
+        bodyColor: AppColors.textPrimaryHighContrastDark,
+        displayColor: AppColors.textPrimaryHighContrastDark,
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: AppColors.backgroundHighContrastDark,
+        foregroundColor: AppColors.textPrimaryHighContrastDark,
+        elevation: 1, // Added elevation for better separation
+        centerTitle: true,
+      ),
+    );
+  }
 }

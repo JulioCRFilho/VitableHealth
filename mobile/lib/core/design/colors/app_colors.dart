@@ -17,4 +17,11 @@ class AppColors {
   static const Color surfaceDark = Color(0xFF1E293B);
   static const Color textPrimaryDark = Color(0xFFF8FAFC);
   static const Color textSecondaryDark = Color(0xFF94A3B8);
+
+  // High Contrast
+  static const Color primaryHighContrast = Color(0xFF063B35);
+  static const Color backgroundHighContrastLight = Colors.white;
+  static const Color backgroundHighContrastDark = Colors.black;
+  static const Color textPrimaryHighContrastLight = Colors.black;
+  static const Color textPrimaryHighContrastDark = Colors.white;
 }

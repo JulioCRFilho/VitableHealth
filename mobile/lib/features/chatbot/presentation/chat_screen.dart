@@ -5,10 +5,11 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import '../../../core/design/typography/text_scale_provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/design/colors/app_colors.dart';
 import '../application/chat_service.dart';
+import '../../../core/design/theme/high_contrast_provider.dart';
+import '../../../core/design/accessibility/accessibility_dialogs.dart';
 import '../../identity/application/auth_notifier.dart';
 import '../../identity/domain/auth_state.dart';
 
@@ -125,6 +126,7 @@ class ChatScreen extends HookConsumerWidget {
     final scrollController = useScrollController();
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final isHighContrast = ref.watch(highContrastProvider);
 
     // Trigger initial message if provided
     useEffect(() {
@@ -167,7 +169,10 @@ class ChatScreen extends HookConsumerWidget {
       extendBodyBehindAppBar: true,
       appBar: _GlassAppBar(isDark: isDark),
       body: Container(
-        decoration: BoxDecoration(gradient: bgGradient),
+        decoration: BoxDecoration(
+          gradient: isHighContrast ? null : bgGradient,
+          color: isHighContrast ? theme.scaffoldBackgroundColor : null,
+        ),
         child: Column(
           children: [
             // ----------------------------------------------------------
@@ -250,17 +255,22 @@ class _GlassAppBar extends ConsumerWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final isHighContrast = ref.watch(highContrastProvider);
     return ClipRRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
         child: Container(
           height: preferredSize.height,
           decoration: BoxDecoration(
-            color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.05),
+            color: isHighContrast 
+                ? theme.scaffoldBackgroundColor 
+                : (isDark ? Colors.black : Colors.white).withValues(alpha: 0.05),
             border: Border(
               bottom: BorderSide(
-                color: (isDark ? Colors.white : AppColors.primary)
-                    .withValues(alpha: 0.08),
+                color: isHighContrast
+                    ? (isDark ? Colors.white : Colors.black)
+                    : (isDark ? Colors.white : AppColors.primary).withValues(alpha: 0.08),
+                width: isHighContrast ? 2.0 : 1.0,
               ),
             ),
           ),
@@ -270,82 +280,96 @@ class _GlassAppBar extends ConsumerWidget implements PreferredSizeWidget {
               child: Row(
                 children: [
                   // Bot avatar
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [AppColors.primary, Color(0xFF14B8A6)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.35),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+                  Tooltip(
+                    message: 'Vitable Assistant Avatar',
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [AppColors.primary, Color(0xFF14B8A6)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.health_and_safety_rounded,
-                      color: Colors.white,
-                      size: 22,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withValues(alpha: 0.35),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.health_and_safety_rounded,
+                        color: Colors.white,
+                        size: 22,
+                        semanticLabel: 'Assistant Icon',
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Vitable Assistant',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: isDark
-                                  ? AppColors.textPrimaryDark
-                                  : AppColors.textPrimaryLight,
-                            ),
-                          ),
-                          Row(
+                    child: Semantics(
+                      label: 'Vitable Assistant, Online',
+                      child: ExcludeSemantics(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Container(
-                                width: 7,
-                                height: 7,
-                                margin: const EdgeInsets.only(right: 5),
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFF22C55E),
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
                               Text(
-                                'Online',
+                                'Vitable Assistant',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  fontSize: 12,
-                                  color: isDark
-                                      ? AppColors.textSecondaryDark
-                                      : AppColors.textSecondaryLight,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: isHighContrast
+                                      ? (isDark ? Colors.white : Colors.black)
+                                      : (isDark
+                                          ? AppColors.textPrimaryDark
+                                          : AppColors.textPrimaryLight),
                                 ),
+                              ),
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 7,
+                                    height: 7,
+                                    margin: const EdgeInsets.only(right: 5),
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFF22C55E),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Online',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      fontSize: 12,
+                                      color: isHighContrast
+                                          ? (isDark ? Colors.white70 : Colors.black87)
+                                          : (isDark
+                                              ? AppColors.textSecondaryDark
+                                              : AppColors.textSecondaryLight),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
                   // Profile Button
                   IconButton(
+                    tooltip: 'Account Profile',
                     icon: Hero(
                       tag: 'profile-photo',
                       child: Container(
@@ -369,6 +393,7 @@ class _GlassAppBar extends ConsumerWidget implements PreferredSizeWidget {
                   ),
                   // Accessibility menu
                   PopupMenuButton<String>(
+                    tooltip: 'Accessibility Settings',
                     icon: Icon(
                       Icons.accessibility_new_rounded,
                       color: isDark ? Colors.white70 : AppColors.primary,
@@ -432,7 +457,22 @@ class _GlassAppBar extends ConsumerWidget implements PreferredSizeWidget {
                     ],
                     onSelected: (value) {
                       if (value == 'font_size') {
-                        _showTextScaleDialog(context, ref);
+                        showTextScaleDialog(context, ref);
+                      } else if (value == 'contrast') {
+                        ref.read(highContrastProvider.notifier).toggle();
+                        final isHighContrast = ref.read(highContrastProvider);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(isHighContrast 
+                              ? 'High contrast mode enabled' 
+                              : 'High contrast mode disabled'),
+                            behavior: SnackBarBehavior.floating,
+                            duration: const Duration(seconds: 2),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        );
                       } else {
                         // Logic for other accessibility menu options
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -456,66 +496,7 @@ class _GlassAppBar extends ConsumerWidget implements PreferredSizeWidget {
     );
   }
 
-  void _showTextScaleDialog(BuildContext context, WidgetRef ref) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return Consumer(
-          builder: (context, ref, _) {
-            final scale = ref.watch(textScaleProvider);
-            return AlertDialog(
-              title: const Text('Adjust Text Size'),
-              backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(height: 20),
-                  Text(
-                    'Sample Text',
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    '${(scale * 100).toInt()}%',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                  Slider(
-                    value: scale,
-                    min: 0.8,
-                    max: 2.0,
-                    divisions: 12,
-                    activeColor: AppColors.primary,
-                    onChanged: (value) {
-                      ref.read(textScaleProvider.notifier).setScale(value);
-                    },
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    ref.read(textScaleProvider.notifier).reset();
-                    Navigator.pop(context);
-                  },
-                  child: const Text('Reset'),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Done'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
+  // Accessibility dialog moved to core/design/accessibility/accessibility_dialogs.dart
 
   @override
   Size get preferredSize => const Size.fromHeight(110);
@@ -524,7 +505,7 @@ class _GlassAppBar extends ConsumerWidget implements PreferredSizeWidget {
 // --------------------------------------------------------------------------
 // Message bubble
 // --------------------------------------------------------------------------
-class _MessageBubble extends StatelessWidget {
+class _MessageBubble extends ConsumerWidget {
   final ChatMessage message;
   final bool isDark;
   final Duration animationDelay;
@@ -536,8 +517,9 @@ class _MessageBubble extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isBot = message.isBot;
+    final isHighContrast = ref.watch(highContrastProvider);
 
     Widget bubble;
     if (isBot) {
@@ -557,44 +539,61 @@ class _MessageBubble extends StatelessWidget {
               ),
               borderRadius: BorderRadius.circular(8),
             ),
-            child:
-                const Icon(Icons.health_and_safety_rounded, color: Colors.white, size: 16),
+            child: const ExcludeSemantics(
+              child: Icon(Icons.health_and_safety_rounded,
+                  color: Colors.white, size: 16),
+            ),
           ),
           Flexible(
-            child: Container(
-              margin: const EdgeInsets.only(bottom: 12, right: 48),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: isDark
-                    ? const Color(0xFF1E3A37)
-                    : Colors.white,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(18),
-                  topRight: Radius.circular(18),
-                  bottomRight: Radius.circular(18),
-                  bottomLeft: Radius.circular(4),
+            child: Semantics(
+              label: 'Vitable Assistant message',
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 12, right: 48),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: isHighContrast
+                      ? (isDark ? Colors.black : Colors.white)
+                      : (isDark ? const Color(0xFF1E3A37) : Colors.white),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(18),
+                    topRight: Radius.circular(18),
+                    bottomRight: Radius.circular(18),
+                    bottomLeft: Radius.circular(4),
+                  ),
+                  border: isHighContrast
+                      ? Border.all(
+                          color: isDark ? Colors.white : Colors.black,
+                          width: 2,
+                        )
+                      : null,
+                  boxShadow: isHighContrast
+                      ? null
+                      : [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.06),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.06),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: MarkdownBody(
-                data: message.text,
-                styleSheet: MarkdownStyleSheet(
-                  p: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    height: 1.5,
-                    color: isDark
-                        ? AppColors.textPrimaryDark
-                        : AppColors.textPrimaryLight,
-                  ),
-                  strong: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? AppColors.secondary : AppColors.primary,
+                child: MarkdownBody(
+                  data: message.text,
+                  styleSheet: MarkdownStyleSheet(
+                    p: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          height: 1.5,
+                          color: isHighContrast
+                              ? (isDark ? Colors.white : Colors.black)
+                              : (isDark
+                                  ? AppColors.textPrimaryDark
+                                  : AppColors.textPrimaryLight),
+                        ),
+                    strong: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: isHighContrast
+                          ? (isDark ? Colors.white : Colors.black)
+                          : (isDark ? AppColors.secondary : AppColors.primary),
+                    ),
                   ),
                 ),
               ),
@@ -607,35 +606,53 @@ class _MessageBubble extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           Flexible(
-            child: Container(
-              margin: const EdgeInsets.only(bottom: 12, left: 48),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppColors.primary, Color(0xFF0D8073)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(18),
-                  topRight: Radius.circular(18),
-                  bottomLeft: Radius.circular(18),
-                  bottomRight: Radius.circular(4),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.30),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
+            child: Semantics(
+              label: 'Your message',
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 12, left: 48),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  gradient: isHighContrast
+                      ? null
+                      : const LinearGradient(
+                          colors: [AppColors.primary, Color(0xFF0D8073)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                  color: isHighContrast
+                      ? (isDark ? Colors.white : Colors.black)
+                      : null,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(18),
+                    topRight: Radius.circular(18),
+                    bottomLeft: Radius.circular(18),
+                    bottomRight: Radius.circular(4),
                   ),
-                ],
-              ),
-              child: Text(
-                message.text,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Colors.white,
-                  height: 1.5,
+                  border: isHighContrast
+                      ? Border.all(
+                          color: isDark ? Colors.black : Colors.white,
+                          width: 2,
+                        )
+                      : null,
+                  boxShadow: isHighContrast
+                      ? null
+                      : [
+                          BoxShadow(
+                            color: AppColors.primary.withValues(alpha: 0.30),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                ),
+                child: Text(
+                  message.text,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: isHighContrast
+                            ? (isDark ? Colors.black : Colors.white)
+                            : Colors.white,
+                        height: 1.5,
+                      ),
                 ),
               ),
             ),
@@ -654,81 +671,100 @@ class _MessageBubble extends StatelessWidget {
 // --------------------------------------------------------------------------
 // Typing indicator
 // --------------------------------------------------------------------------
-class _TypingIndicatorBubble extends StatelessWidget {
+class _TypingIndicatorBubble extends ConsumerWidget {
   final bool isDark;
 
   const _TypingIndicatorBubble({required this.isDark});
 
   @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Container(
-          width: 30,
-          height: 30,
-          margin: const EdgeInsets.only(right: 8, bottom: 4),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [AppColors.primary, Color(0xFF14B8A6)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: const Icon(Icons.health_and_safety_rounded,
-              color: Colors.white, size: 16),
-        ),
-        Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E3A37) : Colors.white,
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(18),
-              topRight: Radius.circular(18),
-              bottomRight: Radius.circular(18),
-              bottomLeft: Radius.circular(4),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.06),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isHighContrast = ref.watch(highContrastProvider);
+    return Semantics(
+      label: 'Assistant is typing...',
+      liveRegion: true,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Container(
+            width: 30,
+            height: 30,
+            margin: const EdgeInsets.only(right: 8, bottom: 4),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [AppColors.primary, Color(0xFF14B8A6)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-            ],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const ExcludeSemantics(
+              child: Icon(Icons.health_and_safety_rounded,
+                  color: Colors.white, size: 16),
+            ),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: List.generate(3, (i) {
-              return Container(
-                width: 8,
-                height: 8,
-                margin: EdgeInsets.only(left: i == 0 ? 0 : 5),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.6),
-                  shape: BoxShape.circle,
-                ),
-              )
-                  .animate(onPlay: (c) => c.repeat())
-                  .scaleXY(
-                    begin: 0.5,
-                    end: 1.0,
-                    duration: 600.ms,
-                    delay: (i * 200).ms,
-                    curve: Curves.easeInOut,
-                  )
-                  .then()
-                  .scaleXY(
-                    begin: 1.0,
-                    end: 0.5,
-                    duration: 600.ms,
-                    curve: Curves.easeInOut,
-                  );
-            }),
+          Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+            decoration: BoxDecoration(
+              color: isHighContrast
+                  ? (isDark ? Colors.black : Colors.white)
+                  : (isDark ? const Color(0xFF1E3A37) : Colors.white),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(18),
+                topRight: Radius.circular(18),
+                bottomRight: Radius.circular(18),
+                bottomLeft: Radius.circular(4),
+              ),
+              border: isHighContrast
+                  ? Border.all(
+                      color: isDark ? Colors.white : Colors.black,
+                      width: 2,
+                    )
+                  : null,
+              boxShadow: isHighContrast
+                  ? null
+                  : [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.06),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: List.generate(3, (i) {
+                return Container(
+                  width: 8,
+                  height: 8,
+                  margin: EdgeInsets.only(left: i == 0 ? 0 : 5),
+                  decoration: BoxDecoration(
+                    color: isHighContrast
+                        ? (isDark ? Colors.white : Colors.black)
+                        : AppColors.primary.withValues(alpha: 0.6),
+                    shape: BoxShape.circle,
+                  ),
+                )
+                    .animate(onPlay: (c) => c.repeat())
+                    .scaleXY(
+                      begin: 0.5,
+                      end: 1.0,
+                      duration: 600.ms,
+                      delay: (i * 200).ms,
+                      curve: Curves.easeInOut,
+                    )
+                    .then()
+                    .scaleXY(
+                      begin: 1.0,
+                      end: 0.5,
+                      duration: 600.ms,
+                      curve: Curves.easeInOut,
+                    );
+              }),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -744,39 +780,47 @@ class _QuickReplies extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12, left: 46),
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: replies
-            .map(
-              (r) => GestureDetector(
-                onTap: () => onTap(r),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: AppColors.primary.withValues(alpha: 0.35),
+    return Semantics(
+      label: 'Quick reply suggestions',
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 12, left: 46),
+        child: Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: replies
+              .map(
+                (r) => GestureDetector(
+                  onTap: () => onTap(r),
+                  child: Semantics(
+                    label: 'Quick reply: $r',
+                    button: true,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: AppColors.primary.withValues(alpha: 0.35),
+                        ),
+                      ),
+                      child: Text(
+                        r,
+                        style:
+                            Theme.of(context).textTheme.labelMedium?.copyWith(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                      ),
                     ),
-                  ),
-                  child: Text(
-                    r,
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                )
-                    .animate()
-                    .fadeIn()
-                    .scale(begin: const Offset(0.9, 0.9)),
-              ),
-            )
-            .toList(),
+                  )
+                      .animate()
+                      .fadeIn()
+                      .scale(begin: const Offset(0.9, 0.9)),
+                ),
+              )
+              .toList(),
+        ),
       ),
     );
   }
@@ -785,7 +829,7 @@ class _QuickReplies extends StatelessWidget {
 // --------------------------------------------------------------------------
 // Input area
 // --------------------------------------------------------------------------
-class _InputArea extends StatelessWidget {
+class _InputArea extends ConsumerWidget {
   final TextEditingController controller;
   final bool isDark;
   final VoidCallback onSend;
@@ -797,18 +841,23 @@ class _InputArea extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isHighContrast = ref.watch(highContrastProvider);
+    final theme = Theme.of(context);
     return ClipRRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
         child: Container(
           decoration: BoxDecoration(
-            color:
-                (isDark ? Colors.black : Colors.white).withValues(alpha: 0.05),
+            color: isHighContrast 
+                ? theme.scaffoldBackgroundColor 
+                : (isDark ? Colors.black : Colors.white).withValues(alpha: 0.05),
             border: Border(
               top: BorderSide(
-                color: (isDark ? Colors.white : AppColors.primary)
-                    .withValues(alpha: 0.08),
+                color: isHighContrast
+                    ? (isDark ? Colors.white : Colors.black)
+                    : (isDark ? Colors.white : AppColors.primary).withValues(alpha: 0.08),
+                width: isHighContrast ? 2.0 : 1.0,
               ),
             ),
           ),
@@ -819,66 +868,69 @@ class _InputArea extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Expanded(
-                  child: TextField(
-                    controller: controller,
-                    maxLines: 4,
-                    minLines: 1,
-                    keyboardType: TextInputType.multiline,
-                    textCapitalization: TextCapitalization.sentences,
-                    decoration: InputDecoration(
-                      hintText: 'Type your message...',
-                      hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: isDark
-                            ? AppColors.textSecondaryDark
-                            : AppColors.textSecondaryLight,
+                  child: Semantics(
+                    textField: true,
+                    label: 'Message input field',
+                    child: TextField(
+                      controller: controller,
+                      maxLines: 4,
+                      minLines: 1,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
+                      keyboardType: TextInputType.multiline,
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: InputDecoration(
+                        hintText: 'Type your message...',
+                        hintStyle:
+                            Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: isDark
+                                      ? Colors.white54
+                                      : Colors.black45,
+                                ),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 4, vertical: 8),
                       ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
-                        borderSide: BorderSide.none,
-                      ),
-                      filled: true,
-                      fillColor: isDark
-                          ? const Color(0xFF1E293B)
-                          : Colors.white,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 12,
-                      ),
+                      onSubmitted: (_) => onSend(),
                     ),
-                    onSubmitted: (_) => onSend(),
                   ),
                 ),
                 const SizedBox(width: 10),
                 Padding(
                   padding: const EdgeInsets.only(bottom: 4),
-                  child: GestureDetector(
-                    onTap: onSend,
-                    child: Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [AppColors.primary, Color(0xFF14B8A6)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withValues(alpha: 0.40),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
+                  child: Semantics(
+                    label: 'Send message',
+                    button: true,
+                    child: GestureDetector(
+                      onTap: onSend,
+                      child: Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [AppColors.primary, Color(0xFF14B8A6)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.send_rounded,
-                        color: Colors.white,
-                        size: 22,
-                      ),
-                    )
-                        .animate(target: 1)
-                        .scaleXY(begin: 1, end: 0.92, duration: 100.ms),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary.withValues(alpha: 0.40),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.send_rounded,
+                          color: Colors.white,
+                          size: 22,
+                        ),
+                      )
+                          .animate(target: 1)
+                          .scaleXY(begin: 1, end: 0.92, duration: 100.ms),
+                    ),
                   ),
                 ),
               ],

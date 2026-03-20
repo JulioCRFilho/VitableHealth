@@ -5,6 +5,7 @@ import 'core/routing/app_router.dart';
 
 import 'features/identity/application/auth_notifier.dart';
 import 'core/design/typography/text_scale_provider.dart';
+import 'core/design/theme/high_contrast_provider.dart';
 
 void main() {
   runApp(const ProviderScope(child: VitableHealthApp()));
@@ -20,6 +21,9 @@ class VitableHealthApp extends ConsumerWidget {
     
     // Watch the custom text scale factor
     final textScaleFactor = ref.watch(textScaleProvider);
+    
+    // Watch high contrast manual override
+    final isHighContrast = ref.watch(highContrastProvider);
 
     return MediaQuery(
       data: MediaQuery.of(context).copyWith(
@@ -27,9 +31,11 @@ class VitableHealthApp extends ConsumerWidget {
       ),
       child: MaterialApp.router(
         title: 'Vitable Health',
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.system, // Dynamically responds to system theme
+        theme: isHighContrast ? AppTheme.highContrastLightTheme : AppTheme.lightTheme,
+        darkTheme: isHighContrast ? AppTheme.highContrastDarkTheme : AppTheme.darkTheme,
+        highContrastTheme: AppTheme.highContrastLightTheme,
+        highContrastDarkTheme: AppTheme.highContrastDarkTheme,
+        themeMode: ThemeMode.system,
         routerConfig: appRouter,
         debugShowCheckedModeBanner: false,
       ),

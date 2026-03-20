@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'chat_screen.dart';
+part of 'high_contrast_provider.dart';
 
 // **************************************************************************
 // RiverpodGenerator
@@ -9,51 +9,50 @@ part of 'chat_screen.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
-@ProviderFor(ChatNotifier)
-final chatProvider = ChatNotifierProvider._();
+@ProviderFor(HighContrast)
+final highContrastProvider = HighContrastProvider._();
 
-final class ChatNotifierProvider
-    extends $NotifierProvider<ChatNotifier, ChatState> {
-  ChatNotifierProvider._()
+final class HighContrastProvider extends $NotifierProvider<HighContrast, bool> {
+  HighContrastProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'chatProvider',
+        name: r'highContrastProvider',
         isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$chatNotifierHash();
+  String debugGetCreateSourceHash() => _$highContrastHash();
 
   @$internal
   @override
-  ChatNotifier create() => ChatNotifier();
+  HighContrast create() => HighContrast();
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(ChatState value) {
+  Override overrideWithValue(bool value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<ChatState>(value),
+      providerOverride: $SyncValueProvider<bool>(value),
     );
   }
 }
 
-String _$chatNotifierHash() => r'157b62309d03fa57ea88504b5da4d9bc79d16e94';
+String _$highContrastHash() => r'1ad5fc5056ceae50b1b64aa4a71107a4f6356016';
 
-abstract class _$ChatNotifier extends $Notifier<ChatState> {
-  ChatState build();
+abstract class _$HighContrast extends $Notifier<bool> {
+  bool build();
   @$mustCallSuper
   @override
   void runBuild() {
-    final ref = this.ref as $Ref<ChatState, ChatState>;
+    final ref = this.ref as $Ref<bool, bool>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<ChatState, ChatState>,
-              ChatState,
+              AnyNotifier<bool, bool>,
+              bool,
               Object?,
               Object?
             >;
