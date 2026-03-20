@@ -202,15 +202,15 @@ class _GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     return ClipRRect(
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
         child: Container(
           height: preferredSize.height,
           decoration: BoxDecoration(
-            color: (isDark ? Colors.black : Colors.white).withOpacity(0.25),
+            color: (isDark ? Colors.black : Colors.white).withOpacity(0.05),
             border: Border(
               bottom: BorderSide(
                 color: (isDark ? Colors.white : AppColors.primary)
-                    .withOpacity(0.12),
+                    .withOpacity(0.08),
               ),
             ),
           ),
@@ -581,15 +581,15 @@ class _InputArea extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClipRRect(
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
         child: Container(
           decoration: BoxDecoration(
             color:
-                (isDark ? Colors.black : Colors.white).withOpacity(0.25),
+                (isDark ? Colors.black : Colors.white).withOpacity(0.05),
             border: Border(
               top: BorderSide(
                 color: (isDark ? Colors.white : AppColors.primary)
-                    .withOpacity(0.12),
+                    .withOpacity(0.08),
               ),
             ),
           ),
@@ -620,7 +620,7 @@ class _InputArea extends StatelessWidget {
                       filled: true,
                       fillColor: isDark
                           ? const Color(0xFF1E293B)
-                          : Colors.white.withOpacity(0.85),
+                          : Colors.white,
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 20,
                         vertical: 12,

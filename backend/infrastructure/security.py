@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_OAEP
 import base64
+import bcrypt
 
 class SecurityHelper:
     """Security utilities for Handshake, RSA, and JWT."""
@@ -43,3 +44,15 @@ class SecurityHelper:
             return {"error": "Token has expired"}
         except jwt.InvalidTokenError:
             return {"error": "Invalid token"}
+
+    @staticmethod
+    def hash_password(password: str) -> str:
+        """Hashes a password using bcrypt."""
+        salt = bcrypt.gensalt()
+        hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
+        return hashed.decode('utf-8')
+
+    @staticmethod
+    def verify_password(password: str, hashed_password: str) -> bool:
+        """Verifies a password against a bcrypt hash."""
+        return bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8'))
