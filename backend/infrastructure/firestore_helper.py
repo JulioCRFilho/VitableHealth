@@ -40,7 +40,7 @@ class FirestoreHelper:
         
         # Security/Compliance: Protect immutable fields in users collection
         if collection == 'users':
-            protected_fields = ['name', 'document']
+            protected_fields = ['document']
             doc_ref = db.collection(collection).document(doc_id)
             doc = doc_ref.get()
             if doc.exists:

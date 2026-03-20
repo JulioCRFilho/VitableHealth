@@ -16,9 +16,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from presentation.views import ChatView
+from presentation.views import ChatView, ProfileView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/chat/', ChatView.as_view(), name='chat'),
+    path('api/profile/', ProfileView.as_view(), name='profile'),
 ]

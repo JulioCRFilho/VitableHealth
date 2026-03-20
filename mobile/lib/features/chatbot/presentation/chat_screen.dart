@@ -5,6 +5,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import '../../../core/design/typography/text_scale_provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/design/colors/app_colors.dart';
 import '../application/chat_service.dart';
@@ -199,13 +200,14 @@ class ChatScreen extends HookConsumerWidget {
 // --------------------------------------------------------------------------
 // Glass AppBar
 // --------------------------------------------------------------------------
-class _GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
+class _GlassAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final bool isDark;
 
   const _GlassAppBar({required this.isDark});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     return ClipRRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
@@ -259,9 +261,8 @@ class _GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
                       children: [
                         Text(
                           'Vitable Assistant',
-                          style: TextStyle(
+                          style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.bold,
-                            fontSize: 16,
                             color: isDark
                                 ? AppColors.textPrimaryDark
                                 : AppColors.textPrimaryLight,
@@ -280,8 +281,7 @@ class _GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
                             ),
                             Text(
                               'Online',
-                              style: TextStyle(
-                                fontSize: 12,
+                              style: theme.textTheme.bodySmall?.copyWith(
                                 color: isDark
                                     ? AppColors.textSecondaryDark
                                     : AppColors.textSecondaryLight,
@@ -379,16 +379,20 @@ class _GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
                       ),
                     ],
                     onSelected: (value) {
-                      // Logic for accessibility menu options (to be implemented in future PRs)
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Accessibility feature: $value coming soon!'),
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                      if (value == 'font_size') {
+                        _showTextScaleDialog(context, ref);
+                      } else {
+                        // Logic for other accessibility menu options
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Accessibility feature: $value coming soon!'),
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                           ),
-                        ),
-                      );
+                        );
+                      }
                     },
                   ),
                 ],
@@ -397,6 +401,67 @@ class _GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
           ),
         ),
       ),
+    );
+  }
+
+  void _showTextScaleDialog(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Consumer(
+          builder: (context, ref, _) {
+            final scale = ref.watch(textScaleProvider);
+            return AlertDialog(
+              title: const Text('Adjust Text Size'),
+              backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 20),
+                  Text(
+                    'Sample Text',
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    '${(scale * 100).toInt()}%',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  Slider(
+                    value: scale,
+                    min: 0.8,
+                    max: 2.0,
+                    divisions: 12,
+                    activeColor: AppColors.primary,
+                    onChanged: (value) {
+                      ref.read(textScaleProvider.notifier).setScale(value);
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    ref.read(textScaleProvider.notifier).reset();
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Reset'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Done'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
@@ -469,8 +534,7 @@ class _MessageBubble extends StatelessWidget {
               child: MarkdownBody(
                 data: message.text,
                 styleSheet: MarkdownStyleSheet(
-                  p: TextStyle(
-                    fontSize: 15,
+                  p: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     height: 1.5,
                     color: isDark
                         ? AppColors.textPrimaryDark
@@ -517,9 +581,8 @@ class _MessageBubble extends StatelessWidget {
               ),
               child: Text(
                 message.text,
-                style: const TextStyle(
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: Colors.white,
-                  fontSize: 15,
                   height: 1.5,
                 ),
               ),
@@ -650,10 +713,9 @@ class _QuickReplies extends StatelessWidget {
                   ),
                   child: Text(
                     r,
-                    style: const TextStyle(
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
                       color: AppColors.primary,
                       fontWeight: FontWeight.w600,
-                      fontSize: 13,
                     ),
                   ),
                 )
@@ -713,7 +775,7 @@ class _InputArea extends StatelessWidget {
                     textCapitalization: TextCapitalization.sentences,
                     decoration: InputDecoration(
                       hintText: 'Type your message...',
-                      hintStyle: TextStyle(
+                      hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: isDark
                             ? AppColors.textSecondaryDark
                             : AppColors.textSecondaryLight,

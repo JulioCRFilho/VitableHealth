@@ -50,7 +50,7 @@ final class ChatNotifierProvider
   }
 }
 
-String _$chatNotifierHash() => r'581ff2c65fef36958cd903fe1e24934daed69dcf';
+String _$chatNotifierHash() => r'754fee0a2f0ba78335d15b6865858b13b28dd832';
 
 abstract class _$ChatNotifier
     extends $Notifier<({bool isTyping, List<ChatMessage> messages})> {

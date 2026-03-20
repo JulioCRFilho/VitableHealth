@@ -82,6 +82,7 @@ class _ProfileContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 110, 20, 20),
       children: [
@@ -151,8 +152,7 @@ class _ProfileContent extends StatelessWidget {
         Center(
           child: Text(
             profile.name,
-            style: const TextStyle(
-              fontSize: 24,
+            style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
               letterSpacing: -0.5,
             ),
@@ -161,8 +161,7 @@ class _ProfileContent extends StatelessWidget {
         Center(
           child: Text(
             profile.email,
-            style: TextStyle(
-              fontSize: 14,
+            style: theme.textTheme.bodyMedium?.copyWith(
               color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
             ),
           ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.3),
@@ -295,6 +294,7 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Row(
       children: [
         Container(
@@ -308,18 +308,16 @@ class _InfoRow extends StatelessWidget {
         const SizedBox(width: 14),
         Text(
           label,
-          style: TextStyle(
+          style: theme.textTheme.bodyMedium?.copyWith(
             color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-            fontSize: 14,
           ),
         ),
         const Spacer(),
         Text(
           value,
-          style: TextStyle(
+          style: theme.textTheme.bodyMedium?.copyWith(
             fontWeight: FontWeight.bold,
             color: valueColor ?? (isDark ? Colors.white : AppColors.textPrimaryLight),
-            fontSize: 14,
           ),
         ),
       ],
@@ -335,10 +333,10 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Text(
       title,
-      style: TextStyle(
-        fontSize: 18,
+      style: theme.textTheme.titleLarge?.copyWith(
         fontWeight: FontWeight.bold,
         color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
       ),
@@ -363,6 +361,7 @@ class _ActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
@@ -391,8 +390,7 @@ class _ActionTile extends StatelessWidget {
               const SizedBox(width: 14),
               Text(
                 title,
-                style: TextStyle(
-                  fontSize: 16,
+                style: theme.textTheme.bodyLarge?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: isDestructive ? Colors.redAccent : (isDark ? Colors.white : AppColors.textPrimaryLight),
                 ),

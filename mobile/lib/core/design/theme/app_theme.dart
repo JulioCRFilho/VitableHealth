@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../colors/app_colors.dart';
+import '../typography/app_typography.dart';
 
 class AppTheme {
   static ThemeData get lightTheme {
@@ -14,6 +15,18 @@ class AppTheme {
         error: Colors.redAccent,
       ),
       useMaterial3: true,
+      textTheme: const TextTheme(
+        headlineLarge: AppTypography.heading1Style,
+        headlineMedium: AppTypography.heading2Style,
+        titleLarge: TextStyle(fontFamily: AppTypography.fontFamily, fontSize: 20, fontWeight: FontWeight.bold),
+        bodyLarge: AppTypography.bodyLargeStyle,
+        bodyMedium: AppTypography.bodyMediumStyle,
+        bodySmall: TextStyle(fontFamily: AppTypography.fontFamily, fontSize: 12, fontWeight: FontWeight.normal),
+        labelMedium: TextStyle(fontFamily: AppTypography.fontFamily, fontSize: 13, fontWeight: FontWeight.w600),
+      ).apply(
+        bodyColor: AppColors.textPrimaryLight,
+        displayColor: AppColors.textPrimaryLight,
+      ),
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.backgroundLight,
         foregroundColor: AppColors.textPrimaryLight,
@@ -45,6 +58,18 @@ class AppTheme {
         error: Colors.redAccent,
       ),
       useMaterial3: true,
+      textTheme: const TextTheme(
+        headlineLarge: AppTypography.heading1Style,
+        headlineMedium: AppTypography.heading2Style,
+        titleLarge: TextStyle(fontFamily: AppTypography.fontFamily, fontSize: 20, fontWeight: FontWeight.bold),
+        bodyLarge: AppTypography.bodyLargeStyle,
+        bodyMedium: AppTypography.bodyMediumStyle,
+        bodySmall: TextStyle(fontFamily: AppTypography.fontFamily, fontSize: 12, fontWeight: FontWeight.normal),
+        labelMedium: TextStyle(fontFamily: AppTypography.fontFamily, fontSize: 13, fontWeight: FontWeight.w600),
+      ).apply(
+        bodyColor: AppColors.textPrimaryDark,
+        displayColor: AppColors.textPrimaryDark,
+      ),
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.backgroundDark,
         foregroundColor: AppColors.textPrimaryDark,

@@ -4,6 +4,7 @@ import 'core/design/theme/app_theme.dart';
 import 'core/routing/app_router.dart';
 
 import 'features/identity/application/auth_notifier.dart';
+import 'core/design/typography/text_scale_provider.dart';
 
 void main() {
   runApp(const ProviderScope(child: VitableHealthApp()));
@@ -16,14 +17,22 @@ class VitableHealthApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Watch the auth state to ensure it's initialized from secure storage on startup
     ref.watch(authProvider);
+    
+    // Watch the custom text scale factor
+    final textScaleFactor = ref.watch(textScaleProvider);
 
-    return MaterialApp.router(
-      title: 'Vitable Health',
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system, // Dynamically responds to system theme
-      routerConfig: appRouter,
-      debugShowCheckedModeBanner: false,
+    return MediaQuery(
+      data: MediaQuery.of(context).copyWith(
+        textScaler: TextScaler.linear(textScaleFactor),
+      ),
+      child: MaterialApp.router(
+        title: 'Vitable Health',
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: ThemeMode.system, // Dynamically responds to system theme
+        routerConfig: appRouter,
+        debugShowCheckedModeBanner: false,
+      ),
     );
   }
 }
