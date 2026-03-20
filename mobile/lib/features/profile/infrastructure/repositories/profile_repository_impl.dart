@@ -27,7 +27,7 @@ class ProfileRepositoryImpl implements IProfileRepository {
         final Map<String, dynamic> data = json.decode(response.body);
         return UserProfile.fromMap(data, data['id'] ?? '');
       } else {
-        throw Exception('Failed to fetch profile: ${response.statusCode}');
+        throw Exception('Failed to fetch profile: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
       throw Exception('Failed to fetch profile: $e');

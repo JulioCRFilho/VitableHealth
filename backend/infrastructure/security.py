@@ -28,10 +28,11 @@ class SecurityHelper:
     @staticmethod
     def generate_jwt(user_id: str, secret_key: str, expiration_minutes: int = 60) -> str:
         """Generates a JWT token for the user."""
+        from datetime import datetime, timedelta, timezone
         payload = {
             'user_id': user_id,
-            'exp': datetime.utcnow() + timedelta(minutes=expiration_minutes),
-            'iat': datetime.utcnow()
+            'exp': datetime.now(timezone.utc) + timedelta(minutes=expiration_minutes),
+            'iat': datetime.now(timezone.utc)
         }
         return jwt.encode(payload, secret_key, algorithm='HS256')
 

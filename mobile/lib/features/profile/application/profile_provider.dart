@@ -9,7 +9,7 @@ part 'profile_provider.g.dart';
 
 @riverpod
 IProfileRepository profileRepository(Ref ref) {
-  final authState = ref.watch(authProvider).value;
+  final authState = ref.watch(authProvider).asData?.value;
   return ProfileRepositoryImpl(token: authState?.token);
 }
 
@@ -20,7 +20,8 @@ class ProfileNotifier extends _$ProfileNotifier {
     final authState = await ref.watch(authProvider.future);
     
     if (authState.status == AuthStatus.authenticated && authState.token != null) {
-      final repository = ref.watch(profileRepositoryProvider);
+      // Ensure we get the repository with the latest token
+      final repository = ref.read(profileRepositoryProvider);
       return repository.getProfile();
     }
     
