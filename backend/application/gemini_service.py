@@ -14,7 +14,7 @@ class GeminiService:
             logger.warning("GEMINI_API_KEY is not set in environment variables.")
         
         self.client = genai.Client(api_key=self.api_key)
-        self.model_name = 'gemini-1.5-flash'  # Stable model with tool calling support
+        self.model_name = 'gemini-2.5-flash'  # Current stable model in 2026
         self.system_instruction = '''
 You are the Vitable Health AI Assistant. You manage the entire user journey.
 Current User ID: {user_id}
