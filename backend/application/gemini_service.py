@@ -20,43 +20,54 @@ You are the Vitable Health AI Assistant. You manage the entire user journey.
 Current User ID: {user_id}
 
 Responsibilities:
-1. Handle Login/Registration:
-   - Use `register_user` if they are new.
-   - Use `login_user` if they have an account.
+1. Handle User Identity:
+   - Use `register_user` for new accounts. Requirements: first_name, last_name, email, password, address, phone.
+   - Use `login_user` to sign in. Requirements: email, password.
+   - Use `request_password_recovery` if forgot. Requirement: email.
+   - Use `change_password` if authenticated. Requirements: current_password, new_password.
 2. Appointment Management:
-   - Use `list_appointments` to show their scheduled visits.
-   - Use `schedule_appointment` to book a new one.
-3. Password Security:
-   - Use `request_password_recovery` if they forgot.
-   - Use `change_password` if they want to update it.
+   - Use `list_appointments` to show scheduled visits.
+   - Use `schedule_appointment` to book new ones.
+3. Health Services:
+   - Use `get_health_plan` to consult coverage.
 
-Security: Always confirm identity before showing sensitive info.
+Guidelines:
+- If a user triggers a tool but parameters are missing, proactively ask for them one by one.
+- Always confirm identity before showing sensitive info.
+- For `request_password_recovery`, provide a helpful mock message.
 '''.format(user_id=self.user_id or "Not Authenticated")
 
     # --- Tool Definitions ---
 
-    def register_user(self, email: str, name: str, password: str) -> str:
-        """Registers a new user with a hashed password."""
+    def register_user(self, first_name: str, last_name: str, email: str, password: str, address: str, phone: str) -> str:
+        """Registers a new user with extended details and a hashed password."""
         hashed = SecurityHelper.hash_password(password)
         uid = FirestoreHelper.create_document('users', {
+            "first_name": first_name,
+            "last_name": last_name,
+            "name": f"{first_name} {last_name}",
             "email": email,
-            "name": name,
             "password": hashed,
-            "status": "active"
+            "address": address,
+            "phone": phone,
+            "status": "active",
+            "created_at": "2026-03-20T09:10:00Z" # Mock current time
         })
-        return f"User registered successfully with ID: {uid}"
+        return f"User registered successfully with ID: {uid}. Welcome {first_name}!"
 
     def login_user(self, email: str, password: str) -> str:
-        """Logs in a user by verifying the hashed password."""
+        """Logs in a user and returns a confirmation message."""
         users = FirestoreHelper.list_collection('users')
         user = next((u for u in users if u.get('email') == email), None)
         if not user:
-            return "User not found."
+            return "Login failed: User not found."
         
         if SecurityHelper.verify_password(password, user.get('password', '')):
             self.user_id = user['id']
-            return f"Login successful for {user.get('name')}. User ID: {user['id']}"
-        return "Invalid password."
+            # Re-initialize system instruction with the new user Context
+            self.system_instruction = self.system_instruction.replace("Not Authenticated", self.user_id)
+            return f"Welcome back, {user.get('first_name', user.get('name'))}! You are now logged in (ID: {user['id']})."
+        return "Login failed: Invalid password."
 
     def list_appointments(self) -> str:
         """Lists appointments for the currently authenticated user."""
@@ -86,14 +97,30 @@ Security: Always confirm identity before showing sensitive info.
         """Initiates password recovery."""
         return f"A recovery link has been sent to {email}."
 
-    def change_password(self, new_password: str) -> str:
-        """Changes the current user's password."""
+    def change_password(self, current_password: str, new_password: str) -> str:
+        """Changes the password after verifying the current one."""
         if not self.user_id:
-            return "Please login first to change your password."
+            return "Security error: You must be logged in to change your password."
+        
+        user = FirestoreHelper.get_document('users', self.user_id)
+        if not user or not SecurityHelper.verify_password(current_password, user.get('password', '')):
+            return "Verification failed: Current password is incorrect."
         
         hashed = SecurityHelper.hash_password(new_password)
         FirestoreHelper.write_document('users', self.user_id, {"password": hashed})
-        return "Password updated successfully."
+        return "Security update: Password changed successfully."
+
+    def get_health_plan(self) -> str:
+        """Retrieves health plan information for the current user."""
+        if not self.user_id:
+            return "Please login to view your health plan details."
+        
+        plans = FirestoreHelper.list_subcollection('users', self.user_id, 'plans')
+        if not plans:
+            return "No active health plan found for your account."
+        
+        plan = plans[0]
+        return f"Your active plan: {plan.get('name', 'Basic Coverage')} (Status: {plan.get('status', 'Active')})."
 
     # --- Communication ---
 
@@ -109,7 +136,8 @@ Security: Always confirm identity before showing sensitive info.
                 self.list_appointments,
                 self.schedule_appointment,
                 self.request_password_recovery,
-                self.change_password
+                self.change_password,
+                self.get_health_plan
             ]
 
             # Generate response with automatic tool calling
