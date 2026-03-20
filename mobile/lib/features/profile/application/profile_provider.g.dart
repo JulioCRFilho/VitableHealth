@@ -54,20 +54,20 @@ final class ProfileRepositoryProvider
   }
 }
 
-String _$profileRepositoryHash() => r'579f8869050e329fcc1db2579cb635edb221a2d9';
+String _$profileRepositoryHash() => r'a0bc7d691b11b6d74de6ed365481349b10bf79a2';
 
 @ProviderFor(ProfileNotifier)
 final profileProvider = ProfileNotifierProvider._();
 
 final class ProfileNotifierProvider
-    extends $AsyncNotifierProvider<ProfileNotifier, UserProfile> {
+    extends $NotifierProvider<ProfileNotifier, AsyncValue<UserProfile?>> {
   ProfileNotifierProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'profileProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -78,21 +78,30 @@ final class ProfileNotifierProvider
   @$internal
   @override
   ProfileNotifier create() => ProfileNotifier();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(AsyncValue<UserProfile?> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<AsyncValue<UserProfile?>>(value),
+    );
+  }
 }
 
-String _$profileNotifierHash() => r'13890a4985adb40d61b18f6f915be81687bccb72';
+String _$profileNotifierHash() => r'648d618359249805a180734cef1351643fc65576';
 
-abstract class _$ProfileNotifier extends $AsyncNotifier<UserProfile> {
-  FutureOr<UserProfile> build();
+abstract class _$ProfileNotifier extends $Notifier<AsyncValue<UserProfile?>> {
+  AsyncValue<UserProfile?> build();
   @$mustCallSuper
   @override
   void runBuild() {
-    final ref = this.ref as $Ref<AsyncValue<UserProfile>, UserProfile>;
+    final ref =
+        this.ref as $Ref<AsyncValue<UserProfile?>, AsyncValue<UserProfile?>>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<AsyncValue<UserProfile>, UserProfile>,
-              AsyncValue<UserProfile>,
+              AnyNotifier<AsyncValue<UserProfile?>, AsyncValue<UserProfile?>>,
+              AsyncValue<UserProfile?>,
               Object?,
               Object?
             >;

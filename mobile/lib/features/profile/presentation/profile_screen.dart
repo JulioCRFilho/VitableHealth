@@ -43,7 +43,9 @@ class ProfileScreen extends ConsumerWidget {
             child: AppBar(
               backgroundColor: isHighContrast
                   ? theme.scaffoldBackgroundColor
-                  : (isDark ? Colors.black : Colors.white).withValues(alpha: 0.05),
+                  : (isDark ? Colors.black : Colors.white).withValues(
+                      alpha: 0.05,
+                    ),
               elevation: 0,
               title: const Text(
                 'Account Profile',
@@ -77,9 +79,11 @@ class ProfileScreen extends ConsumerWidget {
                       final isHighContrast = ref.read(highContrastProvider);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(isHighContrast 
-                            ? 'High contrast mode enabled' 
-                            : 'High contrast mode disabled'),
+                          content: Text(
+                            isHighContrast
+                                ? 'High contrast mode enabled'
+                                : 'High contrast mode disabled',
+                          ),
                           behavior: SnackBarBehavior.floating,
                           duration: const Duration(seconds: 2),
                           shape: RoundedRectangleBorder(
@@ -147,7 +151,7 @@ class ProfileScreen extends ConsumerWidget {
             profile: profile,
             isDark: isDark,
             onLogout: () => _logout(context, ref),
-            onEdit: () => _showEditDialog(context, ref, profile),
+            onEdit: () => _showEditDialog(context, ref, profile!),
           ),
           loading: () => const Center(
             child: CircularProgressIndicator(color: AppColors.primary),
@@ -224,8 +228,9 @@ class ProfileScreen extends ConsumerWidget {
                     labelText: 'Name',
                     prefixIcon: Icon(Icons.person_outline_rounded),
                   ),
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Name is required' : null,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Name is required'
+                      : null,
                 ),
               ),
               const SizedBox(height: 16),
@@ -433,8 +438,8 @@ class _ProfileContent extends ConsumerWidget {
                 color: isHighContrast
                     ? (isDark ? Colors.white70 : Colors.black87)
                     : (isDark
-                        ? AppColors.textSecondaryDark
-                        : AppColors.textSecondaryLight),
+                          ? AppColors.textSecondaryDark
+                          : AppColors.textSecondaryLight),
               ),
             ),
           ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.3),
@@ -452,7 +457,7 @@ class _ProfileContent extends ConsumerWidget {
               _InfoRow(
                 icon: Icons.vpn_key_rounded,
                 label: 'Membership ID',
-                value: profile.id.length >= 4 
+                value: profile.id.length >= 4
                     ? 'VIT-${profile.id.substring(0, 4).toUpperCase()}'
                     : 'VIT-${profile.id.toUpperCase()}',
                 isDark: isDark,
@@ -611,11 +616,13 @@ class _InfoRow extends ConsumerWidget {
                   ? Border.all(color: isDark ? Colors.white : Colors.black)
                   : null,
             ),
-            child: Icon(icon,
-                color: isHighContrast
-                    ? (isDark ? Colors.white : Colors.black)
-                    : AppColors.primary,
-                size: 20),
+            child: Icon(
+              icon,
+              color: isHighContrast
+                  ? (isDark ? Colors.white : Colors.black)
+                  : AppColors.primary,
+              size: 20,
+            ),
           ),
           const SizedBox(width: 14),
           Text(
@@ -624,8 +631,8 @@ class _InfoRow extends ConsumerWidget {
               color: isHighContrast
                   ? (isDark ? Colors.white : Colors.black)
                   : (isDark
-                      ? AppColors.textSecondaryDark
-                      : AppColors.textSecondaryLight),
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight),
             ),
           ),
           const Spacer(),
@@ -687,7 +694,9 @@ class _ActionTile extends ConsumerWidget {
     return Semantics(
       button: true,
       label: '$title button',
-      hint: isDestructive ? 'Will perform a destructive action' : 'Tap to open $title',
+      hint: isDestructive
+          ? 'Will perform a destructive action'
+          : 'Tap to open $title',
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         child: InkWell(
@@ -696,22 +705,20 @@ class _ActionTile extends ConsumerWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: isHighContrast 
-                  ? theme.scaffoldBackgroundColor 
+              color: isHighContrast
+                  ? theme.scaffoldBackgroundColor
                   : (isDestructive
-                      ? Colors.redAccent.withValues(alpha: 0.1)
-                      : (isDark ? Colors.white : AppColors.primary).withValues(
-                          alpha: 0.04,
-                        )),
+                        ? Colors.redAccent.withValues(alpha: 0.1)
+                        : (isDark ? Colors.white : AppColors.primary)
+                              .withValues(alpha: 0.04)),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: isHighContrast
                     ? (isDark ? Colors.white : Colors.black)
                     : (isDestructive
-                        ? Colors.redAccent.withValues(alpha: 0.2)
-                        : (isDark ? Colors.white : AppColors.primary).withValues(
-                            alpha: 0.08,
-                          )),
+                          ? Colors.redAccent.withValues(alpha: 0.2)
+                          : (isDark ? Colors.white : AppColors.primary)
+                                .withValues(alpha: 0.08)),
                 width: isHighContrast ? 2.0 : 1.0,
               ),
             ),
@@ -730,8 +737,10 @@ class _ActionTile extends ConsumerWidget {
                     color: isHighContrast
                         ? (isDark ? Colors.white : Colors.black)
                         : (isDestructive
-                            ? Colors.redAccent
-                            : (isDark ? Colors.white : AppColors.textPrimaryLight)),
+                              ? Colors.redAccent
+                              : (isDark
+                                    ? Colors.white
+                                    : AppColors.textPrimaryLight)),
                   ),
                 ),
                 const Spacer(),

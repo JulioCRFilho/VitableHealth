@@ -8,8 +8,8 @@ part 'chat_service.g.dart';
 
 @riverpod
 ChatService chatService(Ref ref) {
-  final authState = ref.watch(authProvider).asData?.value;
-  return ChatService(token: authState?.token);
+  final token = ref.watch(authProvider).value?.token;
+  return ChatService(token: token);
 }
 
 class ChatService {

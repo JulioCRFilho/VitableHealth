@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/design/theme/app_theme.dart';
 import 'core/routing/app_router.dart';
 
-import 'features/identity/application/auth_notifier.dart';
 import 'core/design/typography/text_scale_provider.dart';
 import 'core/design/theme/high_contrast_provider.dart';
 
@@ -16,9 +15,6 @@ class VitableHealthApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Watch the auth state to ensure it's initialized from secure storage on startup
-    ref.watch(authProvider);
-    
     // Watch the custom text scale factor
     final textScaleFactor = ref.watch(textScaleProvider);
     

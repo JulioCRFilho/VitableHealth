@@ -18,15 +18,16 @@ class ProfileRepositoryImpl implements IProfileRepository {
 
   @override
   Future<UserProfile> getProfile() async {
+    final stopwatch = Stopwatch()..start();
     print('DEBUG: ProfileRepositoryImpl.getProfile() starting');
     try {
       print('DEBUG: URL: $_baseUrl/api/profile/');
       final response = await http.get(
         Uri.parse('$_baseUrl/api/profile/'),
         headers: _headers,
-      ).timeout(const Duration(seconds: 5));
+      ).timeout(const Duration(seconds: 3));
 
-      print('DEBUG: ProfileResponse: ${response.statusCode}');
+      print('DEBUG: ProfileResponse: ${response.statusCode} (took ${stopwatch.elapsedMilliseconds}ms)');
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
         return UserProfile.fromMap(data, data['id'] ?? '');
