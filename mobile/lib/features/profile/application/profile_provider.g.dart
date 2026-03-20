@@ -54,7 +54,7 @@ final class ProfileRepositoryProvider
   }
 }
 
-String _$profileRepositoryHash() => r'a0bc7d691b11b6d74de6ed365481349b10bf79a2';
+String _$profileRepositoryHash() => r'579f8869050e329fcc1db2579cb635edb221a2d9';
 
 @ProviderFor(ProfileNotifier)
 final profileProvider = ProfileNotifierProvider._();
@@ -80,7 +80,7 @@ final class ProfileNotifierProvider
   ProfileNotifier create() => ProfileNotifier();
 }
 
-String _$profileNotifierHash() => r'16ddbecfb3f5053027ea05351ebde13a55bfe64d';
+String _$profileNotifierHash() => r'eb866e854b10bd0e6f51ffd15f9f0eafbf89c39a';
 
 abstract class _$ProfileNotifier extends $AsyncNotifier<UserProfile> {
   FutureOr<UserProfile> build();

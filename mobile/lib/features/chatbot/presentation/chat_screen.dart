@@ -11,7 +11,6 @@ import '../../../core/design/colors/app_colors.dart';
 import '../application/chat_service.dart';
 import '../../identity/application/auth_notifier.dart';
 import '../../identity/domain/auth_state.dart';
-import '../../profile/application/profile_provider.dart';
 
 part 'chat_screen.g.dart';
 
@@ -57,26 +56,11 @@ class ChatState {
 @riverpod
 class ChatNotifier extends _$ChatNotifier {
   @override
-  Future<ChatState> build() async {
-    // Resolve auth state; don't crash if it errors – treat as unauthenticated.
-    final authState = await ref.watch(authProvider.future).catchError(
-          (_) => const AuthState(status: AuthStatus.unauthenticated),
-        );
-
-    final isLoggedIn = authState.status == AuthStatus.authenticated;
-
-    // Try to fetch the user's first name when authenticated.
-    String? firstName;
-    if (isLoggedIn) {
-      try {
-        final profile = await ref.watch(profileProvider.future);
-        if (profile.name.trim().isNotEmpty) {
-          firstName = profile.name.trim().split(' ').first;
-        }
-      } catch (_) {
-        // Ignore errors, greet without name
-      }
-    }
+  ChatState build() {
+    // Watch auth state reactively.
+    final authState = ref.watch(authProvider).value;
+    final isLoggedIn = authState?.status == AuthStatus.authenticated;
+    final firstName = authState?.firstName;
 
     final greeting = isLoggedIn
         ? 'Hello${firstName != null ? ', $firstName' : ''}! 👋 Welcome back to **Vitable Assistant**.\n\nHow can I help you today?'
@@ -97,15 +81,11 @@ class ChatNotifier extends _$ChatNotifier {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return;
 
-    final current = state.value;
-    if (current == null) return;
-
+    final current = state;
     // Add user message + show typing
-    state = AsyncValue.data(
-      current.copyWith(
-        messages: [...current.messages, ChatMessage(text: trimmed, isBot: false)],
-        isTyping: true,
-      ),
+    state = current.copyWith(
+      messages: [...current.messages, ChatMessage(text: trimmed, isBot: false)],
+      isTyping: true,
     );
 
     final chatService = ref.read(chatServiceProvider);
@@ -119,16 +99,13 @@ class ChatNotifier extends _$ChatNotifier {
       return;
     }
 
-    final updated = state.value;
-    if (updated == null) return;
-    state = AsyncValue.data(
-      updated.copyWith(
-        messages: [
-          ...updated.messages,
-          ChatMessage(text: result.response, isBot: true),
-        ],
-        isTyping: false,
-      ),
+    final updated = state;
+    state = updated.copyWith(
+      messages: [
+        ...updated.messages,
+        ChatMessage(text: result.response, isBot: true),
+      ],
+      isTyping: false,
     );
   }
 }
@@ -144,11 +121,10 @@ class ChatScreen extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final chatAsync = ref.watch(chatProvider);
-    final chatState = chatAsync.value;
-    final messages = chatState?.messages ?? const [];
-    final isTyping = chatState?.isTyping ?? false;
-    final quickReplies = chatState?.quickReplies ?? const [];
+    final chatState = ref.watch(chatProvider);
+    final messages = chatState.messages;
+    final isTyping = chatState.isTyping;
+    final quickReplies = chatState.quickReplies;
 
     final textController = useTextEditingController();
     final scrollController = useScrollController();
@@ -192,45 +168,43 @@ class ChatScreen extends HookConsumerWidget {
             // Message list
             // ----------------------------------------------------------
             Expanded(
-              child: chatAsync.isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : ListView.builder(
-                      controller: scrollController,
-                      padding: const EdgeInsets.fromLTRB(16, 130, 16, 12),
-                      itemCount: messages.length +
-                          (isTyping ? 1 : 0) +
-                          (messages.length == 1 && quickReplies.isNotEmpty ? 1 : 0),
-                      itemBuilder: (context, index) {
-                        // Show quick replies after the first bot greeting
-                        if (messages.length == 1 &&
-                            quickReplies.isNotEmpty &&
-                            index == 1 &&
-                            !isTyping) {
-                          return _QuickReplies(
-                            replies: quickReplies,
-                            onTap: (reply) {
-                              textController.text = reply;
-                              _sendMessage(ref, textController, scrollController);
-                            },
-                          ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.3);
-                        }
-
-                        // Typing indicator bubble
-                        if (isTyping && index == messages.length) {
-                          return _TypingIndicatorBubble(isDark: isDark)
-                              .animate()
-                              .fadeIn()
-                              .slideX(begin: -0.2);
-                        }
-
-                        final msg = messages[index];
-                        return _MessageBubble(
-                          message: msg,
-                          isDark: isDark,
-                          animationDelay: (index * 50).ms,
-                        );
+              child: ListView.builder(
+                controller: scrollController,
+                padding: const EdgeInsets.fromLTRB(16, 130, 16, 12),
+                itemCount: messages.length +
+                    (isTyping ? 1 : 0) +
+                    (messages.length == 1 && quickReplies.isNotEmpty ? 1 : 0),
+                itemBuilder: (context, index) {
+                  // Show quick replies after the first bot greeting
+                  if (messages.length == 1 &&
+                      quickReplies.isNotEmpty &&
+                      index == 1 &&
+                      !isTyping) {
+                    return _QuickReplies(
+                      replies: quickReplies,
+                      onTap: (reply) {
+                        textController.text = reply;
+                        _sendMessage(ref, textController, scrollController);
                       },
-                    ),
+                    ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.3);
+                  }
+
+                  // Typing indicator bubble
+                  if (isTyping && index == messages.length) {
+                    return _TypingIndicatorBubble(isDark: isDark)
+                        .animate()
+                        .fadeIn()
+                        .slideX(begin: -0.2);
+                  }
+
+                  final msg = messages[index];
+                  return _MessageBubble(
+                    message: msg,
+                    isDark: isDark,
+                    animationDelay: (index * 50).ms,
+                  );
+                },
+              ),
             ),
 
             // ----------------------------------------------------------
@@ -408,7 +382,7 @@ class _GlassAppBar extends ConsumerWidget implements PreferredSizeWidget {
                                 size: 20,
                                 color: isDark ? Colors.white70 : AppColors.primary),
                             const SizedBox(width: 12),
-                            const Text('Text Scale Setting'),
+                            const Expanded(child: Text('Text Scale Setting')),
                           ],
                         ),
                       ),
@@ -420,7 +394,7 @@ class _GlassAppBar extends ConsumerWidget implements PreferredSizeWidget {
                                 size: 20,
                                 color: isDark ? Colors.white70 : AppColors.primary),
                             const SizedBox(width: 12),
-                            const Text('Screen Reader Help'),
+                            const Expanded(child: Text('Screen Reader Help')),
                           ],
                         ),
                       ),
@@ -432,7 +406,7 @@ class _GlassAppBar extends ConsumerWidget implements PreferredSizeWidget {
                                 size: 20,
                                 color: isDark ? Colors.white70 : AppColors.primary),
                             const SizedBox(width: 12),
-                            const Text('Voice Control Guide'),
+                            const Expanded(child: Text('Voice Control Guide')),
                           ],
                         ),
                       ),
@@ -445,7 +419,7 @@ class _GlassAppBar extends ConsumerWidget implements PreferredSizeWidget {
                                 size: 20,
                                 color: isDark ? Colors.white70 : AppColors.primary),
                             const SizedBox(width: 12),
-                            const Text('High Contrast'),
+                            const Expanded(child: Text('High Contrast')),
                           ],
                         ),
                       ),
