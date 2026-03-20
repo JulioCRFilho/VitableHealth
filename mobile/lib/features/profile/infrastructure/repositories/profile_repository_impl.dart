@@ -24,7 +24,7 @@ class ProfileRepositoryImpl implements IProfileRepository {
       final response = await http.get(
         Uri.parse('$_baseUrl/api/profile/'),
         headers: _headers,
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 5));
 
       print('DEBUG: ProfileResponse: ${response.statusCode}');
       if (response.statusCode == 200) {

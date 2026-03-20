@@ -7,7 +7,10 @@ final GoRouter appRouter = GoRouter(
   routes: [
     GoRoute(
       path: '/',
-      builder: (context, state) => const ChatScreen(),
+      builder: (context, state) {
+        final initialMessage = state.uri.queryParameters['message'];
+        return ChatScreen(initialMessage: initialMessage);
+      },
     ),
     GoRoute(
       path: '/profile',

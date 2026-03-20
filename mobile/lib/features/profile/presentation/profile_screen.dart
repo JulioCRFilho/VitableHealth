@@ -38,8 +38,8 @@ class ProfileScreen extends ConsumerWidget {
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
             child: AppBar(
-              backgroundColor:
-                  (isDark ? Colors.black : Colors.white).withValues(alpha: 0.05),
+              backgroundColor: (isDark ? Colors.black : Colors.white)
+                  .withValues(alpha: 0.05),
               elevation: 0,
               title: const Text(
                 'Account Profile',
@@ -54,11 +54,8 @@ class ProfileScreen extends ConsumerWidget {
                 if (profileState.hasValue)
                   IconButton(
                     icon: const Icon(Icons.edit_note_rounded),
-                    onPressed: () => _showEditDialog(
-                      context,
-                      ref,
-                      profileState.value!,
-                    ),
+                    onPressed: () =>
+                        _showEditDialog(context, ref, profileState.value!),
                   ),
               ],
             ),
@@ -77,7 +74,46 @@ class ProfileScreen extends ConsumerWidget {
           loading: () => const Center(
             child: CircularProgressIndicator(color: AppColors.primary),
           ),
-          error: (err, _) => Center(child: Text('Error: $err')),
+          error: (err, _) => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.error_outline_rounded,
+                    color: Colors.redAccent,
+                    size: 48,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Something went wrong',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    err.toString(),
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textSecondaryLight,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  FilledButton.icon(
+                    onPressed: () => context.go('/?message=I want to login'),
+                    icon: const Icon(Icons.login_rounded),
+                    label: const Text('I want to login'),
+                  ),
+                  TextButton(
+                    onPressed: () => ref.refresh(profileProvider),
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -119,8 +155,9 @@ class ProfileScreen extends ConsumerWidget {
                   labelText: 'Email',
                   prefixIcon: Icon(Icons.email_outlined),
                 ),
-                validator: (v) =>
-                    (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
+                validator: (v) => (v == null || !v.contains('@'))
+                    ? 'Enter a valid email'
+                    : null,
               ),
             ],
           ),
@@ -140,9 +177,7 @@ class ProfileScreen extends ConsumerWidget {
               );
 
               Navigator.of(ctx).pop();
-              await ref
-                  .read(profileProvider.notifier)
-                  .updateProfile(updated);
+              await ref.read(profileProvider.notifier).updateProfile(updated);
 
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -240,8 +275,11 @@ class _ProfileContent extends StatelessWidget {
                         : null,
                     backgroundColor: Colors.white12,
                     child: profile.profilePictureUrl == null
-                        ? const Icon(Icons.person_rounded,
-                            size: 60, color: Colors.white24)
+                        ? const Icon(
+                            Icons.person_rounded,
+                            size: 60,
+                            color: Colors.white24,
+                          )
                         : null,
                   ),
                 ),
@@ -260,8 +298,11 @@ class _ProfileContent extends StatelessWidget {
                       width: 3,
                     ),
                   ),
-                  child: const Icon(Icons.camera_alt_rounded,
-                      size: 16, color: Colors.white),
+                  child: const Icon(
+                    Icons.camera_alt_rounded,
+                    size: 16,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ],
@@ -283,7 +324,9 @@ class _ProfileContent extends StatelessWidget {
           child: Text(
             profile.email,
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+              color: isDark
+                  ? AppColors.textSecondaryDark
+                  : AppColors.textSecondaryLight,
             ),
           ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.3),
         ),
@@ -303,7 +346,12 @@ class _ProfileContent extends StatelessWidget {
                 value: 'VIT-${profile.id.substring(0, 4).toUpperCase()}',
                 isDark: isDark,
               ),
-              Divider(height: 32, color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.08)),
+              Divider(
+                height: 32,
+                color: (isDark ? Colors.white : Colors.black).withValues(
+                  alpha: 0.08,
+                ),
+              ),
               _InfoRow(
                 icon: Icons.verified_user_rounded,
                 label: 'Status',
@@ -311,11 +359,18 @@ class _ProfileContent extends StatelessWidget {
                 valueColor: Colors.greenAccent,
                 isDark: isDark,
               ),
-              Divider(height: 32, color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.08)),
+              Divider(
+                height: 32,
+                color: (isDark ? Colors.white : Colors.black).withValues(
+                  alpha: 0.08,
+                ),
+              ),
               _InfoRow(
                 icon: Icons.health_and_safety_rounded,
                 label: 'Health Plan',
-                value: profile.planId.contains('complete') ? 'Complete' : 'Basic',
+                value: profile.planId.contains('complete')
+                    ? 'Complete'
+                    : 'Basic',
                 isDark: isDark,
               ),
             ],
@@ -327,9 +382,10 @@ class _ProfileContent extends StatelessWidget {
         // ---------------------------------------------------------------------
         // Action List
         // ---------------------------------------------------------------------
-        _SectionTitle(title: 'Settings', isDark: isDark)
-            .animate()
-            .fadeIn(delay: 500.ms),
+        _SectionTitle(
+          title: 'Settings',
+          isDark: isDark,
+        ).animate().fadeIn(delay: 500.ms),
         const SizedBox(height: 12),
 
         Column(
@@ -385,10 +441,14 @@ class _GlassCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: (isDark ? Colors.white : AppColors.primary).withValues(alpha: 0.05),
+            color: (isDark ? Colors.white : AppColors.primary).withValues(
+              alpha: 0.05,
+            ),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: (isDark ? Colors.white : AppColors.primary).withValues(alpha: 0.1),
+              color: (isDark ? Colors.white : AppColors.primary).withValues(
+                alpha: 0.1,
+              ),
             ),
           ),
           child: child,
@@ -430,7 +490,9 @@ class _InfoRow extends StatelessWidget {
         Text(
           label,
           style: theme.textTheme.bodyMedium?.copyWith(
-            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+            color: isDark
+                ? AppColors.textSecondaryDark
+                : AppColors.textSecondaryLight,
           ),
         ),
         const Spacer(),
@@ -438,7 +500,9 @@ class _InfoRow extends StatelessWidget {
           value,
           style: theme.textTheme.bodyMedium?.copyWith(
             fontWeight: FontWeight.bold,
-            color: valueColor ?? (isDark ? Colors.white : AppColors.textPrimaryLight),
+            color:
+                valueColor ??
+                (isDark ? Colors.white : AppColors.textPrimaryLight),
           ),
         ),
       ],
@@ -493,12 +557,16 @@ class _ActionTile extends StatelessWidget {
           decoration: BoxDecoration(
             color: isDestructive
                 ? Colors.redAccent.withValues(alpha: 0.1)
-                : (isDark ? Colors.white : AppColors.primary).withValues(alpha: 0.04),
+                : (isDark ? Colors.white : AppColors.primary).withValues(
+                    alpha: 0.04,
+                  ),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isDestructive
                   ? Colors.redAccent.withValues(alpha: 0.2)
-                  : (isDark ? Colors.white : AppColors.primary).withValues(alpha: 0.08),
+                  : (isDark ? Colors.white : AppColors.primary).withValues(
+                      alpha: 0.08,
+                    ),
             ),
           ),
           child: Row(
@@ -513,13 +581,16 @@ class _ActionTile extends StatelessWidget {
                 title,
                 style: theme.textTheme.bodyLarge?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: isDestructive ? Colors.redAccent : (isDark ? Colors.white : AppColors.textPrimaryLight),
+                  color: isDestructive
+                      ? Colors.redAccent
+                      : (isDark ? Colors.white : AppColors.textPrimaryLight),
                 ),
               ),
               const Spacer(),
               Icon(
                 Icons.chevron_right_rounded,
-                color: (isDestructive ? Colors.redAccent : AppColors.primary).withValues(alpha: 0.5),
+                color: (isDestructive ? Colors.redAccent : AppColors.primary)
+                    .withValues(alpha: 0.5),
               ),
             ],
           ),

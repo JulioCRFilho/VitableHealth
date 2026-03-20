@@ -117,7 +117,8 @@ class ChatNotifier extends _$ChatNotifier {
 // Main screen
 // --------------------------------------------------------------------------
 class ChatScreen extends HookConsumerWidget {
-  const ChatScreen({super.key});
+  final String? initialMessage;
+  const ChatScreen({super.key, this.initialMessage});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -130,6 +131,17 @@ class ChatScreen extends HookConsumerWidget {
     final scrollController = useScrollController();
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+
+    // Trigger initial message if provided
+    useEffect(() {
+      if (initialMessage != null && initialMessage!.isNotEmpty) {
+        // Wait a bit for the UI to settle
+        Future.microtask(() {
+          ref.read(chatProvider.notifier).addMessage(initialMessage!);
+        });
+      }
+      return null;
+    }, [initialMessage]);
 
     // Auto-scroll when new messages or typing changes
     useEffect(() {
