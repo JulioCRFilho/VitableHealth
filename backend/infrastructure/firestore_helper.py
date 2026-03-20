@@ -42,11 +42,23 @@ class FirestoreHelper:
         return True
 
     @staticmethod
+    def create_document(collection: str, data: dict) -> str:
+        if not db: return None
+        _, doc_ref = db.collection(collection).add(data)
+        return doc_ref.id
+
+    @staticmethod
     def write_subcollection_document(parent_col: str, parent_id: str, sub_col: str, doc_id: str, data: dict, merge: bool = True):
         if not db: return False
         doc_ref = db.collection(parent_col).document(parent_id).collection(sub_col).document(doc_id)
         doc_ref.set(data, merge=merge)
         return True
+
+    @staticmethod
+    def create_subcollection_document(parent_col: str, parent_id: str, sub_col: str, data: dict) -> str:
+        if not db: return None
+        _, doc_ref = db.collection(parent_col).document(parent_id).collection(sub_col).add(data)
+        return doc_ref.id
 
     @staticmethod
     def list_collection(collection: str, limit: int = 100) -> list:

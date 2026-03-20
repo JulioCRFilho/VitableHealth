@@ -1,43 +1,91 @@
+import firebase_admin
+from firebase_admin import credentials, firestore
+import logging
+import uuid
 import sys
 import os
-import django
 
+# Add backend to path to import infrastructure
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
-django.setup()
 
 from infrastructure.firestore_helper import FirestoreHelper
 
 def run_mock():
-    print("Populating initial database mocks for Vitable Health...")
+    print("Populating database mocks with auto-generated Firestore UUIDs...")
     
-    # 1. Plans
-    plans = [
-        {"id": "basic_plan", "name": "Basic Health Plan", "price": 0, "features": ["Telemedicine", "Prescription Upload"]},
-        {"id": "complete_plan", "name": "Complete Health Plan", "price": 49.99, "features": ["Telemedicine", "In-person priority", "Free Medications", "Exams"]}
-    ]
-    for p in plans:
-        FirestoreHelper.write_document('plans', p['id'], p)
+    # 1. Global Plans (Root Collection)
+    # Capture IDs to link with users
+    plan_basic_id = FirestoreHelper.create_document('plans', {
+        "name": "Basic Health Plan", 
+        "price": 0, 
+        "features": ["Telemedicine", "Prescription Upload"]
+    })
+    plan_complete_id = FirestoreHelper.create_document('plans', {
+        "name": "Complete Health Plan", 
+        "price": 49.99, 
+        "features": ["Telemedicine", "Free Medications", "Priority Support"]
+    })
+
+    # 2. Global Medications (Root Collection)
+    FirestoreHelper.create_document('medications', {
+        "name": "Ibuprofen 400mg", 
+        "stock": 500, 
+        "free_on_complete": True
+    })
+    FirestoreHelper.create_document('medications', {
+        "name": "Amoxicillin 500mg", 
+        "stock": 200, 
+        "free_on_complete": True
+    })
+
+    # 3. Global Telemedicine Slots (Root Collection)
+    slot_id = FirestoreHelper.create_document('telemedicine_slots', {
+        "time": "2026-03-25T10:00:00Z", 
+        "doctor": "Dr. Sarah", 
+        "available": True
+    })
+
+    # 4. Users (Root Collection)
+    # Capture IDs for subcollection references
+    user_1_id = FirestoreHelper.create_document('users', {
+        "email": "john@example.com", 
+        "name": "John Doe", 
+        "plan_id": plan_complete_id, 
+        "status": "active"
+    })
+    user_2_id = FirestoreHelper.create_document('users', {
+        "email": "jane@example.com", 
+        "name": "Jane Smith", 
+        "plan_id": plan_basic_id, 
+        "status": "active"
+    })
+
+    # 5. User-specific History/Vitals (Nested)
+    # Pattern: history/{user-id}/history/{auto-id}
+    FirestoreHelper.create_subcollection_document('history', user_1_id, 'history', {
+        "type": "heart_rate", 
+        "value": 72, 
+        "unit": "bpm", 
+        "timestamp": "2026-03-19T10:00:00Z"
+    })
+    FirestoreHelper.create_subcollection_document('history', user_1_id, 'history', {
+        "type": "blood_pressure", 
+        "value": "120/80", 
+        "unit": "mmHg", 
+        "timestamp": "2026-03-19T10:00:00Z"
+    })
         
-    # 2. Medications
-    meds = [
-        {"id": "med_1", "name": "Ibuprofen 400mg", "stock": 500, "free_on_complete": True},
-        {"id": "med_2", "name": "Amoxicillin 500mg", "stock": 200, "free_on_complete": True},
-        {"id": "med_3", "name": "Omeprazole 20mg", "stock": 300, "free_on_complete": False}
-    ]
-    for m in meds:
-        FirestoreHelper.write_document('medications', m['id'], m)
+    # 6. User-specific Appointments (Nested)
+    # Pattern: appointments/{user-id}/appointments/{auto-id}
+    FirestoreHelper.create_subcollection_document('appointments', user_1_id, 'appointments', {
+        "user_id": user_1_id, 
+        "time": "2026-03-25T11:00:00Z", 
+        "doctor": "Dr. Sarah", 
+        "status": "scheduled",
+        "slot_id": slot_id
+    })
         
-    # 3. Telemedicine slots Mock
-    slots = [
-        {"id": "slot_1", "time": "2026-03-20T09:00:00Z", "doctor": "Dr. Sarah", "available": True},
-        {"id": "slot_2", "time": "2026-03-20T10:00:00Z", "doctor": "Dr. Sarah", "available": True},
-        {"id": "slot_3", "time": "2026-03-20T11:00:00Z", "doctor": "Dr. James", "available": True}
-    ]
-    for s in slots:
-        FirestoreHelper.write_document('telemedicine_slots', s['id'], s)
-        
-    print("Database mocked successfully.")
+    print(f"Database mocked successfully for 'vitablehealth' using auto-generated IDs.")
 
 if __name__ == "__main__":
     run_mock()
