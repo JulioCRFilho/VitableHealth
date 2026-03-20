@@ -1,6 +1,7 @@
 from google import genai
 from django.conf import settings
 import logging
+from datetime import datetime, timezone
 from infrastructure.firestore_helper import FirestoreHelper
 from infrastructure.security import SecurityHelper
 
@@ -30,6 +31,9 @@ Responsibilities:
    - Use `schedule_appointment` to book new ones.
 3. Health Services:
    - Use `get_health_plan` to consult coverage.
+4. Profile Management:
+   - Use `get_user_profile` to show the user their account details (name, email, phone, address).
+   - Use `update_user_profile` to update user information.
 
 Guidelines:
 - If a user triggers a tool but parameters are missing, proactively ask for them one by one.
@@ -51,7 +55,7 @@ Guidelines:
             "address": address,
             "phone": phone,
             "status": "active",
-            "created_at": "2026-03-20T09:10:00Z" # Mock current time
+            "created_at": datetime.now(timezone.utc).isoformat()
         })
         return f"User registered successfully with ID: {uid}. Welcome {first_name}!"
 
@@ -122,6 +126,38 @@ Guidelines:
         plan = plans[0]
         return f"Your active plan: {plan.get('name', 'Basic Coverage')} (Status: {plan.get('status', 'Active')})."
 
+    def get_user_profile(self) -> str:
+        """Retrieves official profile information for the current user."""
+        if not self.user_id:
+            return "Please login first to view your profile."
+        
+        user = FirestoreHelper.get_document('users', self.user_id)
+        if not user:
+            return "Error: User profile not found in database."
+        
+        return (f"Profile Details:\n"
+                f"- Name: {user.get('name')}\n"
+                f"- Email: {user.get('email')}\n"
+                f"- Phone: {user.get('phone', 'N/A')}\n"
+                f"- Address: {user.get('address', 'N/A')}\n"
+                f"- Status: {user.get('status', 'active')}")
+
+    def update_user_profile(self, name: str = None, phone: str = None, address: str = None) -> str:
+        """Updates specific fields in the user's profile."""
+        if not self.user_id:
+            return "Please login first to update your profile."
+        
+        updates = {}
+        if name: updates['name'] = name
+        if phone: updates['phone'] = phone
+        if address: updates['address'] = address
+        
+        if not updates:
+            return "No updates provided. Please specify what you want to change (name, phone, or address)."
+        
+        FirestoreHelper.write_document('users', self.user_id, updates)
+        return f"Profile updated successfully: {', '.join(updates.keys())}."
+
     # --- Communication ---
 
     def send_message(self, message: str, history: list = None) -> str:
@@ -137,7 +173,9 @@ Guidelines:
                 self.schedule_appointment,
                 self.request_password_recovery,
                 self.change_password,
-                self.get_health_plan
+                self.get_health_plan,
+                self.get_user_profile,
+                self.update_user_profile
             ]
 
             # Generate response with automatic tool calling

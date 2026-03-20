@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/design/theme/app_theme.dart';
 import 'core/routing/app_router.dart';
 
+import 'features/identity/application/auth_notifier.dart';
+
 void main() {
   runApp(const ProviderScope(child: VitableHealthApp()));
 }
@@ -12,6 +14,9 @@ class VitableHealthApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Watch the auth state to ensure it's initialized from secure storage on startup
+    ref.watch(authProvider);
+
     return MaterialApp.router(
       title: 'Vitable Health',
       theme: AppTheme.lightTheme,

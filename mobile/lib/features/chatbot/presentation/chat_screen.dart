@@ -1,11 +1,11 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/design/colors/app_colors.dart';
 import '../application/chat_service.dart';
 
@@ -206,11 +206,11 @@ class _GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
         child: Container(
           height: preferredSize.height,
           decoration: BoxDecoration(
-            color: (isDark ? Colors.black : Colors.white).withOpacity(0.05),
+            color: (isDark ? Colors.black : Colors.white).withValues(alpha: 0.05),
             border: Border(
               bottom: BorderSide(
                 color: (isDark ? Colors.white : AppColors.primary)
-                    .withOpacity(0.08),
+                    .withValues(alpha: 0.08),
               ),
             ),
           ),
@@ -232,7 +232,7 @@ class _GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.primary.withOpacity(0.35),
+                          color: AppColors.primary.withValues(alpha: 0.35),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -285,6 +285,29 @@ class _GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
                         ),
                       ],
                     ),
+                  ),
+                  // Profile Button
+                  IconButton(
+                    icon: Hero(
+                      tag: 'profile-photo',
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppColors.primary.withValues(alpha: 0.5),
+                            width: 1.5,
+                          ),
+                        ),
+                        child: const CircleAvatar(
+                          radius: 14,
+                          backgroundColor: AppColors.secondary,
+                          child: Icon(Icons.person_rounded,
+                              size: 18, color: AppColors.primary),
+                        ),
+                      ),
+                    ),
+                    onPressed: () => context.push('/profile'),
                   ),
                   // Accessibility menu
                   PopupMenuButton<String>(
@@ -431,7 +454,7 @@ class _MessageBubble extends StatelessWidget {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.25 : 0.06),
+                    color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.06),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -480,7 +503,7 @@ class _MessageBubble extends StatelessWidget {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.30),
+                    color: AppColors.primary.withValues(alpha: 0.30),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -548,7 +571,7 @@ class _TypingIndicatorBubble extends StatelessWidget {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(isDark ? 0.25 : 0.06),
+                color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.06),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -562,7 +585,7 @@ class _TypingIndicatorBubble extends StatelessWidget {
                 height: 8,
                 margin: EdgeInsets.only(left: i == 0 ? 0 : 5),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.6),
+                  color: AppColors.primary.withValues(alpha: 0.6),
                   shape: BoxShape.circle,
                 ),
               )
@@ -613,10 +636,10 @@ class _QuickReplies extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.08),
+                    color: AppColors.primary.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: AppColors.primary.withOpacity(0.35),
+                      color: AppColors.primary.withValues(alpha: 0.35),
                     ),
                   ),
                   child: Text(
@@ -661,11 +684,11 @@ class _InputArea extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             color:
-                (isDark ? Colors.black : Colors.white).withOpacity(0.05),
+                (isDark ? Colors.black : Colors.white).withValues(alpha: 0.05),
             border: Border(
               top: BorderSide(
                 color: (isDark ? Colors.white : AppColors.primary)
-                    .withOpacity(0.08),
+                    .withValues(alpha: 0.08),
               ),
             ),
           ),
@@ -722,7 +745,7 @@ class _InputArea extends StatelessWidget {
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primary.withOpacity(0.40),
+                            color: AppColors.primary.withValues(alpha: 0.40),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),

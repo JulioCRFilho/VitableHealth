@@ -2,18 +2,21 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../core/constants/api_constants.dart';
+import '../../identity/application/auth_notifier.dart';
 
 part 'chat_service.g.dart';
 
 @riverpod
 ChatService chatService(Ref ref) {
-  return ChatService();
+  final authState = ref.watch(authProvider).asData?.value;
+  return ChatService(token: authState?.token);
 }
 
 class ChatService {
   final String _endpoint = '${ApiConstants.baseUrl}/api/chat/';
+  final String? token;
 
-  ChatService();
+  ChatService({this.token});
 
   Future<String> sendMessage(String message) async {
     try {
@@ -21,6 +24,7 @@ class ChatService {
         Uri.parse(_endpoint),
         headers: {
           'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
         },
         body: jsonEncode({
           'message': message,
