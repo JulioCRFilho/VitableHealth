@@ -286,6 +286,82 @@ class _GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
                       ],
                     ),
                   ),
+                  // Accessibility menu
+                  PopupMenuButton<String>(
+                    icon: Icon(
+                      Icons.accessibility_new_rounded,
+                      color: isDark ? Colors.white70 : AppColors.primary,
+                      size: 24,
+                    ),
+                    offset: const Offset(0, 50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                    itemBuilder: (context) => [
+                      PopupMenuItem(
+                        value: 'font_size',
+                        child: Row(
+                          children: [
+                            Icon(Icons.format_size_rounded,
+                                size: 20,
+                                color: isDark ? Colors.white70 : AppColors.primary),
+                            const SizedBox(width: 12),
+                            const Text('Text Scale Setting'),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'screen_reader',
+                        child: Row(
+                          children: [
+                            Icon(Icons.record_voice_over_rounded,
+                                size: 20,
+                                color: isDark ? Colors.white70 : AppColors.primary),
+                            const SizedBox(width: 12),
+                            const Text('Screen Reader Help'),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'voice_control',
+                        child: Row(
+                          children: [
+                            Icon(Icons.settings_voice_rounded,
+                                size: 20,
+                                color: isDark ? Colors.white70 : AppColors.primary),
+                            const SizedBox(width: 12),
+                            const Text('Voice Control Guide'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuDivider(),
+                      PopupMenuItem(
+                        value: 'contrast',
+                        child: Row(
+                          children: [
+                            Icon(Icons.contrast_rounded,
+                                size: 20,
+                                color: isDark ? Colors.white70 : AppColors.primary),
+                            const SizedBox(width: 12),
+                            const Text('High Contrast'),
+                          ],
+                        ),
+                      ),
+                    ],
+                    onSelected: (value) {
+                      // Logic for accessibility menu options (to be implemented in future PRs)
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Accessibility feature: $value coming soon!'),
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
