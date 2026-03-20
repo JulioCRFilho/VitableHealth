@@ -1,0 +1,26 @@
+steps:
+  # 1. Build the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/vitable-repo/vitable-backend:$COMMIT_SHA', 'backend/']
+
+  # 2. Push the container image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/vitable-repo/vitable-backend:$COMMIT_SHA']
+
+  # 3. Deploy container image to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'vitable-backend'
+      - '--image'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/vitable-repo/vitable-backend:$COMMIT_SHA'
+      - '--region'
+      - 'us-central1'
+      - '--set-secrets'
+      - 'GEMINI_KEY=GEMINI_KEY:latest'
+      - '--allow-unauthenticated'
+
+images:
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/vitable-repo/vitable-backend:$COMMIT_SHA'
