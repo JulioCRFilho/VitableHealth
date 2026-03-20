@@ -1,6 +1,6 @@
 import '../models/user_profile.dart';
 
 abstract class IProfileRepository {
-  Future<UserProfile> getProfile(String userId);
+  Future<UserProfile> getProfile();
   Future<void> updateProfile(UserProfile profile);
 }

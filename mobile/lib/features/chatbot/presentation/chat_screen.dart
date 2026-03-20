@@ -10,6 +10,8 @@ import 'package:go_router/go_router.dart';
 import '../../../core/design/colors/app_colors.dart';
 import '../application/chat_service.dart';
 import '../../identity/application/auth_notifier.dart';
+import '../../identity/domain/auth_state.dart';
+import '../../profile/application/profile_provider.dart';
 
 part 'chat_screen.g.dart';
 
@@ -24,22 +26,70 @@ class ChatMessage {
 }
 
 // --------------------------------------------------------------------------
+// Chat state (messages + typing + quick replies for current session)
+// --------------------------------------------------------------------------
+class ChatState {
+  final List<ChatMessage> messages;
+  final bool isTyping;
+  final List<String> quickReplies;
+
+  const ChatState({
+    required this.messages,
+    required this.isTyping,
+    required this.quickReplies,
+  });
+
+  ChatState copyWith({
+    List<ChatMessage>? messages,
+    bool? isTyping,
+    List<String>? quickReplies,
+  }) =>
+      ChatState(
+        messages: messages ?? this.messages,
+        isTyping: isTyping ?? this.isTyping,
+        quickReplies: quickReplies ?? this.quickReplies,
+      );
+}
+
+// --------------------------------------------------------------------------
 // Notifier
 // --------------------------------------------------------------------------
 @riverpod
 class ChatNotifier extends _$ChatNotifier {
   @override
-  ({List<ChatMessage> messages, bool isTyping}) build() {
-    return (
-      messages: [
-        const ChatMessage(
-          text:
-              'Hello! 👋 I am your **Vitable Assistant**. How can I help you today?\n\n'
-              'Are you a new or returning patient?',
-          isBot: true,
-        ),
-      ],
+  Future<ChatState> build() async {
+    // Resolve auth state; don't crash if it errors – treat as unauthenticated.
+    final authState = await ref.watch(authProvider.future).catchError(
+          (_) => const AuthState(status: AuthStatus.unauthenticated),
+        );
+
+    final isLoggedIn = authState.status == AuthStatus.authenticated;
+
+    // Try to fetch the user's first name when authenticated.
+    String? firstName;
+    if (isLoggedIn) {
+      try {
+        final profile = await ref.watch(profileProvider.future);
+        if (profile.name.trim().isNotEmpty) {
+          firstName = profile.name.trim().split(' ').first;
+        }
+      } catch (_) {
+        // Ignore errors, greet without name
+      }
+    }
+
+    final greeting = isLoggedIn
+        ? 'Hello${firstName != null ? ', $firstName' : ''}! 👋 Welcome back to **Vitable Assistant**.\n\nHow can I help you today?'
+        : 'Hello! 👋 I am your **Vitable Assistant**. How can I help you today?\n\nAre you a new or returning patient?';
+
+    final quickReplies = isLoggedIn
+        ? const ['My appointments', 'Update profile', 'See services', 'Talk to a human']
+        : const ['New patient', 'Returning patient', 'See services', 'Talk to a human'];
+
+    return ChatState(
+      messages: [ChatMessage(text: greeting, isBot: true)],
       isTyping: false,
+      quickReplies: quickReplies,
     );
   }
 
@@ -47,39 +97,44 @@ class ChatNotifier extends _$ChatNotifier {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return;
 
+    final current = state.value;
+    if (current == null) return;
+
     // Add user message + show typing
-    state = (
-      messages: [...state.messages, ChatMessage(text: trimmed, isBot: false)],
-      isTyping: true,
+    state = AsyncValue.data(
+      current.copyWith(
+        messages: [...current.messages, ChatMessage(text: trimmed, isBot: false)],
+        isTyping: true,
+      ),
     );
 
     final chatService = ref.read(chatServiceProvider);
     final result = await chatService.sendMessage(trimmed);
 
-    // If a token was returned (e.g. after login), persist it
+    // If a token was returned (e.g. after login), persist it and rebuild
+    // so the greeting updates to the authenticated version.
     if (result.token != null) {
       await ref.read(authProvider.notifier).login(result.token!);
+      ref.invalidateSelf();
+      return;
     }
 
-    state = (
-      messages: [
-        ...state.messages,
-        ChatMessage(text: result.response, isBot: true),
-      ],
-      isTyping: false,
+    final updated = state.value;
+    if (updated == null) return;
+    state = AsyncValue.data(
+      updated.copyWith(
+        messages: [
+          ...updated.messages,
+          ChatMessage(text: result.response, isBot: true),
+        ],
+        isTyping: false,
+      ),
     );
   }
 }
 
-// --------------------------------------------------------------------------
-// Quick reply suggestions (shown only after the first bot greeting)
-// --------------------------------------------------------------------------
-const _quickReplies = [
-  'New patient',
-  'Returning patient',
-  'See services',
-  'Talk to a human',
-];
+// Quick replies are now stored in ChatState and set dynamically based on
+// auth status. See ChatNotifier.build() for the two variants.
 
 // --------------------------------------------------------------------------
 // Main screen
@@ -89,9 +144,11 @@ class ChatScreen extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final chatState = ref.watch(chatProvider);
-    final messages = chatState.messages;
-    final isTyping = chatState.isTyping;
+    final chatAsync = ref.watch(chatProvider);
+    final chatState = chatAsync.value;
+    final messages = chatState?.messages ?? const [];
+    final isTyping = chatState?.isTyping ?? false;
+    final quickReplies = chatState?.quickReplies ?? const [];
 
     final textController = useTextEditingController();
     final scrollController = useScrollController();
@@ -135,40 +192,45 @@ class ChatScreen extends HookConsumerWidget {
             // Message list
             // ----------------------------------------------------------
             Expanded(
-              child: ListView.builder(
-                controller: scrollController,
-                padding: const EdgeInsets.fromLTRB(16, 130, 16, 12),
-                itemCount: messages.length +
-                    (isTyping ? 1 : 0) +
-                    (messages.length == 1 ? 1 : 0), // quick replies
-                itemBuilder: (context, index) {
-                  // Show quick replies after the first bot greeting
-                  if (messages.length == 1 && index == 1 && !isTyping) {
-                    return _QuickReplies(
-                      replies: _quickReplies,
-                      onTap: (reply) {
-                        textController.text = reply;
-                        _sendMessage(ref, textController, scrollController);
+              child: chatAsync.isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : ListView.builder(
+                      controller: scrollController,
+                      padding: const EdgeInsets.fromLTRB(16, 130, 16, 12),
+                      itemCount: messages.length +
+                          (isTyping ? 1 : 0) +
+                          (messages.length == 1 && quickReplies.isNotEmpty ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        // Show quick replies after the first bot greeting
+                        if (messages.length == 1 &&
+                            quickReplies.isNotEmpty &&
+                            index == 1 &&
+                            !isTyping) {
+                          return _QuickReplies(
+                            replies: quickReplies,
+                            onTap: (reply) {
+                              textController.text = reply;
+                              _sendMessage(ref, textController, scrollController);
+                            },
+                          ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.3);
+                        }
+
+                        // Typing indicator bubble
+                        if (isTyping && index == messages.length) {
+                          return _TypingIndicatorBubble(isDark: isDark)
+                              .animate()
+                              .fadeIn()
+                              .slideX(begin: -0.2);
+                        }
+
+                        final msg = messages[index];
+                        return _MessageBubble(
+                          message: msg,
+                          isDark: isDark,
+                          animationDelay: (index * 50).ms,
+                        );
                       },
-                    ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.3);
-                  }
-
-                  // Typing indicator bubble
-                  if (isTyping && index == messages.length) {
-                    return _TypingIndicatorBubble(isDark: isDark)
-                        .animate()
-                        .fadeIn()
-                        .slideX(begin: -0.2);
-                  }
-
-                  final msg = messages[index];
-                  return _MessageBubble(
-                    message: msg,
-                    isDark: isDark,
-                    animationDelay: (index * 50).ms,
-                  );
-                },
-              ),
+                    ),
             ),
 
             // ----------------------------------------------------------
@@ -261,8 +323,11 @@ class _GlassAppBar extends ConsumerWidget implements PreferredSizeWidget {
                       children: [
                         Text(
                           'Vitable Assistant',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.bold,
+                            fontSize: 16,
                             color: isDark
                                 ? AppColors.textPrimaryDark
                                 : AppColors.textPrimaryLight,
@@ -281,7 +346,10 @@ class _GlassAppBar extends ConsumerWidget implements PreferredSizeWidget {
                             ),
                             Text(
                               'Online',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: theme.textTheme.bodySmall?.copyWith(
+                                fontSize: 12,
                                 color: isDark
                                     ? AppColors.textSecondaryDark
                                     : AppColors.textSecondaryLight,

@@ -13,11 +13,7 @@ part of 'chat_screen.dart';
 final chatProvider = ChatNotifierProvider._();
 
 final class ChatNotifierProvider
-    extends
-        $NotifierProvider<
-          ChatNotifier,
-          ({bool isTyping, List<ChatMessage> messages})
-        > {
+    extends $AsyncNotifierProvider<ChatNotifier, ChatState> {
   ChatNotifierProvider._()
     : super(
         from: null,
@@ -35,43 +31,21 @@ final class ChatNotifierProvider
   @$internal
   @override
   ChatNotifier create() => ChatNotifier();
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(
-    ({bool isTyping, List<ChatMessage> messages}) value,
-  ) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride:
-          $SyncValueProvider<({bool isTyping, List<ChatMessage> messages})>(
-            value,
-          ),
-    );
-  }
 }
 
-String _$chatNotifierHash() => r'754fee0a2f0ba78335d15b6865858b13b28dd832';
+String _$chatNotifierHash() => r'59ad68474396063267a9314c02a2b38ff18a670f';
 
-abstract class _$ChatNotifier
-    extends $Notifier<({bool isTyping, List<ChatMessage> messages})> {
-  ({bool isTyping, List<ChatMessage> messages}) build();
+abstract class _$ChatNotifier extends $AsyncNotifier<ChatState> {
+  FutureOr<ChatState> build();
   @$mustCallSuper
   @override
   void runBuild() {
-    final ref =
-        this.ref
-            as $Ref<
-              ({bool isTyping, List<ChatMessage> messages}),
-              ({bool isTyping, List<ChatMessage> messages})
-            >;
+    final ref = this.ref as $Ref<AsyncValue<ChatState>, ChatState>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<
-                ({bool isTyping, List<ChatMessage> messages}),
-                ({bool isTyping, List<ChatMessage> messages})
-              >,
-              ({bool isTyping, List<ChatMessage> messages}),
+              AnyNotifier<AsyncValue<ChatState>, ChatState>,
+              AsyncValue<ChatState>,
               Object?,
               Object?
             >;

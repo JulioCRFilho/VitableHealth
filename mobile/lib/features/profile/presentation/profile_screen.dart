@@ -6,6 +6,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/design/colors/app_colors.dart';
 import '../application/profile_provider.dart';
+import '../domain/models/user_profile.dart';
+import '../../identity/application/auth_notifier.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -49,12 +51,15 @@ class ProfileScreen extends ConsumerWidget {
                 onPressed: () => context.pop(),
               ),
               actions: [
-                IconButton(
-                  icon: const Icon(Icons.edit_note_rounded),
-                  onPressed: () {
-                    // Logic to edit profile info
-                  },
-                ),
+                if (profileState.hasValue)
+                  IconButton(
+                    icon: const Icon(Icons.edit_note_rounded),
+                    onPressed: () => _showEditDialog(
+                      context,
+                      ref,
+                      profileState.value!,
+                    ),
+                  ),
               ],
             ),
           ),
@@ -63,7 +68,12 @@ class ProfileScreen extends ConsumerWidget {
       body: Container(
         decoration: BoxDecoration(gradient: bgGradient),
         child: profileState.when(
-          data: (profile) => _ProfileContent(profile: profile, isDark: isDark),
+          data: (profile) => _ProfileContent(
+            profile: profile,
+            isDark: isDark,
+            onLogout: () => _logout(context, ref),
+            onEdit: () => _showEditDialog(context, ref, profile),
+          ),
           loading: () => const Center(
             child: CircularProgressIndicator(color: AppColors.primary),
           ),
@@ -72,13 +82,124 @@ class ProfileScreen extends ConsumerWidget {
       ),
     );
   }
+
+  Future<void> _showEditDialog(
+    BuildContext context,
+    WidgetRef ref,
+    UserProfile profile,
+  ) async {
+    final nameController = TextEditingController(text: profile.name);
+    final emailController = TextEditingController(text: profile.email);
+    final formKey = GlobalKey<FormState>();
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Edit Profile'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Name',
+                  prefixIcon: Icon(Icons.person_outline_rounded),
+                ),
+                validator: (v) =>
+                    (v == null || v.trim().isEmpty) ? 'Name is required' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  prefixIcon: Icon(Icons.email_outlined),
+                ),
+                validator: (v) =>
+                    (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              if (!formKey.currentState!.validate()) return;
+
+              final updated = profile.copyWith(
+                name: nameController.text.trim(),
+                email: emailController.text.trim(),
+              );
+
+              Navigator.of(ctx).pop();
+              await ref
+                  .read(profileProvider.notifier)
+                  .updateProfile(updated);
+
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Profile updated!')),
+                );
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+
+    nameController.dispose();
+    emailController.dispose();
+  }
+
+  Future<void> _logout(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await ref.read(authProvider.notifier).logout();
+      if (context.mounted) context.go('/');
+    }
+  }
 }
 
 class _ProfileContent extends StatelessWidget {
   final dynamic profile; // UserProfile
   final bool isDark;
+  final VoidCallback onLogout;
+  final VoidCallback onEdit;
 
-  const _ProfileContent({required this.profile, required this.isDark});
+  const _ProfileContent({
+    required this.profile,
+    required this.isDark,
+    required this.onLogout,
+    required this.onEdit,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -235,7 +356,7 @@ class _ProfileContent extends StatelessWidget {
               icon: Icons.logout_rounded,
               title: 'Logout',
               isDestructive: true,
-              onTap: () {},
+              onTap: onLogout,
               isDark: isDark,
             ),
           ],

@@ -2,21 +2,29 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../domain/models/user_profile.dart';
 import '../domain/repositories/profile_repository.dart';
 import '../infrastructure/repositories/profile_repository_impl.dart';
+import '../../identity/application/auth_notifier.dart';
+import '../../identity/domain/auth_state.dart';
 
 part 'profile_provider.g.dart';
 
 @riverpod
 IProfileRepository profileRepository(Ref ref) {
-  return ProfileRepositoryImpl();
+  final authState = ref.watch(authProvider).value;
+  return ProfileRepositoryImpl(token: authState?.token);
 }
 
 @riverpod
 class ProfileNotifier extends _$ProfileNotifier {
   @override
   FutureOr<UserProfile> build() async {
-    final repository = ref.watch(profileRepositoryProvider);
-    // Hardcoded user ID for demo purposes, in a real app this would come from the auth state
-    return repository.getProfile("user_1_id");
+    final authState = await ref.watch(authProvider.future);
+    
+    if (authState.status == AuthStatus.authenticated && authState.token != null) {
+      final repository = ref.watch(profileRepositoryProvider);
+      return repository.getProfile();
+    }
+    
+    throw Exception('Authentication required to view profile');
   }
 
   Future<void> updateProfile(UserProfile profile) async {
