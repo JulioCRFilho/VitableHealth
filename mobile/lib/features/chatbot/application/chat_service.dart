@@ -31,12 +31,12 @@ class ChatService {
         final data = jsonDecode(response.body);
         return data['response'] ?? "I'm sorry, I couldn't process that.";
       } else if (response.statusCode == 404) {
-         return "Connection error: The chat service endpoint was not found (404). Please ensure the backend is deployed.";
+        return "Connection error: The chat service endpoint was not found (404). Please ensure the backend is deployed.";
       } else {
-        return "Error from AI Assistant (Status \${response.statusCode}): \${response.reasonPhrase}";
+        return "Error from AI Assistant (Status ${response.statusCode}): ${response.reasonPhrase}";
       }
     } catch (e) {
-      return "Error connecting to AI Assistant: \$e";
+      return "Error connecting to AI Assistant: $e";
     }
   }
 }
