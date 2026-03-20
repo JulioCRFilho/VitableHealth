@@ -21,6 +21,11 @@ class ProfileNotifier extends _$ProfileNotifier {
   FutureOr<UserProfile> build() async {
     final authState = await ref.watch(authProvider.future);
 
+    // If AuthNotifier already fetched the profile, use it
+    if (authState.profile != null) {
+      return authState.profile!;
+    }
+
     if (authState.status == AuthStatus.authenticated && authState.token != null) {
       final repository = ref.read(profileRepositoryProvider);
       return repository.getProfile();

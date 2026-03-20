@@ -91,13 +91,7 @@ class ChatNotifier extends _$ChatNotifier {
     final chatService = ref.read(chatServiceProvider);
     final result = await chatService.sendMessage(trimmed);
 
-    // If a token was returned (e.g. after login), persist it and rebuild
-    // so the greeting updates to the authenticated version.
-    if (result.token != null) {
-      await ref.read(authProvider.notifier).login(result.token!);
-      ref.invalidateSelf();
-      return;
-    }
+   
 
     final updated = state;
     state = updated.copyWith(

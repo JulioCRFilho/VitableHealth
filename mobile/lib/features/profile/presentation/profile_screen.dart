@@ -343,7 +343,9 @@ class _ProfileContent extends StatelessWidget {
               _InfoRow(
                 icon: Icons.vpn_key_rounded,
                 label: 'Membership ID',
-                value: 'VIT-${profile.id.substring(0, 4).toUpperCase()}',
+                value: profile.id.length >= 4 
+                    ? 'VIT-${profile.id.substring(0, 4).toUpperCase()}'
+                    : 'VIT-${profile.id.toUpperCase()}',
                 isDark: isDark,
               ),
               Divider(
