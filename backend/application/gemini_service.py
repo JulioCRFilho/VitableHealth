@@ -32,18 +32,19 @@ Responsibilities:
 3. Health Services:
    - Use `get_health_plan` to consult coverage.
 4. Profile Management:
-   - Use `get_user_profile` to show the user their account details (name, email, phone, address).
-   - Use `update_user_profile` to update user information.
+   - Use `get_user_profile` to show the user their account details (name, email, phone, address, document).
+   - Use `update_user_profile` to update user information (phone, address). IMPORTANT: Name and Document cannot be changed after registration.
 
 Guidelines:
 - If a user triggers a tool but parameters are missing, proactively ask for them one by one.
 - Always confirm identity before showing sensitive info.
 - For `request_password_recovery`, provide a helpful mock message.
+- THE USER'S NAME AND DOCUMENT ARE PERMANENT AND CANNOT BE CHANGED AFTER REGISTRATION.
 '''.format(user_id=self.user_id or "Not Authenticated")
 
     # --- Tool Definitions ---
 
-    def register_user(self, first_name: str, last_name: str, email: str, password: str, address: str, phone: str) -> str:
+    def register_user(self, first_name: str, last_name: str, email: str, password: str, address: str, phone: str, document: str) -> str:
         """Registers a new user with extended details and a hashed password."""
         hashed = SecurityHelper.hash_password(password)
         uid = FirestoreHelper.create_document('users', {
@@ -54,6 +55,7 @@ Guidelines:
             "password": hashed,
             "address": address,
             "phone": phone,
+            "document": document,
             "status": "active",
             "created_at": datetime.now(timezone.utc).isoformat()
         })
@@ -137,23 +139,23 @@ Guidelines:
         
         return (f"Profile Details:\n"
                 f"- Name: {user.get('name')}\n"
+                f"- Document: {user.get('document', 'N/A')}\n"
                 f"- Email: {user.get('email')}\n"
                 f"- Phone: {user.get('phone', 'N/A')}\n"
                 f"- Address: {user.get('address', 'N/A')}\n"
                 f"- Status: {user.get('status', 'active')}")
 
-    def update_user_profile(self, name: str = None, phone: str = None, address: str = None) -> str:
-        """Updates specific fields in the user's profile."""
+    def update_user_profile(self, phone: str = None, address: str = None) -> str:
+        """Updates specific fields in the user's profile. Name and Document cannot be updated."""
         if not self.user_id:
             return "Please login first to update your profile."
         
         updates = {}
-        if name: updates['name'] = name
         if phone: updates['phone'] = phone
         if address: updates['address'] = address
         
         if not updates:
-            return "No updates provided. Please specify what you want to change (name, phone, or address)."
+            return "No updates provided. Please specify what you want to change (phone or address)."
         
         FirestoreHelper.write_document('users', self.user_id, updates)
         return f"Profile updated successfully: {', '.join(updates.keys())}."

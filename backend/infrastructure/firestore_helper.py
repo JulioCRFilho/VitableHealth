@@ -37,6 +37,19 @@ class FirestoreHelper:
     @staticmethod
     def write_document(collection: str, doc_id: str, data: dict, merge: bool = True):
         if not db: return False
+        
+        # Security/Compliance: Protect immutable fields in users collection
+        if collection == 'users':
+            protected_fields = ['name', 'document']
+            doc_ref = db.collection(collection).document(doc_id)
+            doc = doc_ref.get()
+            if doc.exists:
+                existing_data = doc.to_dict()
+                for field in protected_fields:
+                    if field in data and field in existing_data and data[field] != existing_data[field]:
+                        logging.warning(f"Attempted to update immutable field '{field}' for user {doc_id}. Update rejected.")
+                        del data[field] # Remove the field from the update data
+        
         doc_ref = db.collection(collection).document(doc_id)
         doc_ref.set(data, merge=merge)
         return True
