@@ -6,7 +6,7 @@ try:
     if not firebase_admin._apps:
         # Use application default credentials
         firebase_admin.initialize_app()
-    db = firestore.client()
+    db = firestore.client(database_id='vitablehealth')
 except Exception as e:
     logging.warning(f"Firebase not initialized properly. Make sure credentials are set: {e}")
     db = None
