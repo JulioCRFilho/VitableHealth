@@ -12,10 +12,12 @@ class ChatView(APIView):
 
     def post(self, request):
         message = request.data.get('message')
+        history = request.data.get('history', [])  # Default to empty list
+        
         if not message:
             return Response({'error': 'Message is required'}, status=status.HTTP_400_BAD_REQUEST)
         
         service = GeminiService()
-        response_text = service.send_message(message)
+        response_text = service.send_message(message, history=history)
         
         return Response({'response': response_text})

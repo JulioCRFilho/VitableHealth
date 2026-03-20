@@ -32,11 +32,25 @@ Never ask for real sensitive health info. Maintain state implicitly through the 
             return f"I received your message: '{message}'. (Note: GEMINI_API_KEY is not configured on the backend)"
 
         try:
-            # History is not fully implemented in this simple proxy yet, 
-            # but the client supports it.
+            contents = []
+            if history:
+                for item in history:
+                    role = item.get('role')
+                    # Map 'assistant' to 'model' if necessary, though common to use 'model'
+                    if role == 'assistant':
+                        role = 'model'
+                    
+                    text = item.get('parts', [{}])[0].get('text') if 'parts' in item else item.get('text')
+                    
+                    if role and text:
+                        contents.append({'role': role, 'parts': [{'text': text}]})
+            
+            # Add the current message
+            contents.append({'role': 'user', 'parts': [{'text': message}]})
+
             response = self.client.models.generate_content(
                 model=self.model_name,
-                contents=message,
+                contents=contents,
                 config={
                     'system_instruction': self.system_instruction,
                 }
