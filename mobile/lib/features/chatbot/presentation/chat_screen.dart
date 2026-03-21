@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/design/colors/app_colors.dart';
 import '../application/chat_service.dart';
 import '../../identity/application/auth_notifier.dart';
+import '../../identity/domain/auth_state.dart';
 import '../../../core/design/theme/high_contrast_provider.dart';
 import '../../../core/design/accessibility/accessibility_dialogs.dart';
 
@@ -56,42 +57,75 @@ class ChatState {
 class ChatNotifier extends _$ChatNotifier {
   @override
   ChatState build() {
-    final authState = ref.watch(authProvider);
+    // 1. Listen for auth changes to handle greeting updates or resets
+    ref.listen(authProvider, (previous, next) {
+      _handleAuthChange(previous, next);
+    });
 
-    return authState.maybeWhen(
-      data: (auth) {
-        final firstName = auth.firstName;
-        final greeting = firstName != null
-            ? 'Hello $firstName! 👋 Welcome back to **Vitable Assistant**.\n\nHow can I help you today?'
-            : 'Hello! 👋 I am your **Vitable Assistant**. How can I help you today?\n\nAre you a new or returning patient?';
+    // 2. Initial state based on current auth
+    final authState = ref.read(authProvider);
+    return _createInitialState(authState.value);
+  }
 
-        final quickReplies = firstName != null
-            ? const [
-                'My appointments',
-                'Update profile',
-                'See services',
-                'Talk to a human',
-              ]
-            : const [
-                'New patient',
-                'Returning patient',
-                'See services',
-                'Talk to a human',
-              ];
+  ChatState _createInitialState(AuthState? auth) {
+    final firstName = auth?.firstName;
+    final greeting = firstName != null
+        ? 'Hello $firstName! 👋 Welcome back to **Vitable Assistant**.\n\nHow can I help you today?'
+        : 'Hello! 👋 I am your **Vitable Assistant**. How can I help you today?\n\nAre you a new or returning patient?';
 
-        return ChatState(
-          messages: [ChatMessage(text: greeting, isBot: true)],
-          isTyping: false,
-          quickReplies: quickReplies,
-        );
-      },
-      orElse: () => const ChatState(
-        messages: [],
-        isTyping: true,
-        quickReplies: [],
-      ),
+    final quickReplies = _getQuickReplies(auth);
+
+    return ChatState(
+      messages: [ChatMessage(text: greeting, isBot: true)],
+      isTyping: false,
+      quickReplies: quickReplies,
     );
   }
+
+  List<String> _getQuickReplies(AuthState? auth) {
+    final firstName = auth?.firstName;
+    return firstName != null
+        ? const [
+            'My appointments',
+            'Update profile',
+            'See services',
+            'Talk to a human',
+          ]
+        : const [
+            'New patient',
+            'Returning patient',
+            'See services',
+            'Talk to a human',
+          ];
+  }
+
+  void _handleAuthChange(AsyncValue<AuthState>? previous, AsyncValue<AuthState> next) {
+    final prevAuth = previous?.value;
+    final nextAuth = next.value;
+
+    if (nextAuth == null) return;
+
+    // Detected Logout
+    if (prevAuth?.status == AuthStatus.authenticated && 
+        nextAuth.status == AuthStatus.unauthenticated) {
+      state = _createInitialState(nextAuth);
+      return;
+    }
+
+    // Detected Login or Name Update
+    if (nextAuth.status == AuthStatus.authenticated) {
+      // If we only have the greeting, we can update it to be personalized
+      if (state.messages.length <= 1) {
+        state = _createInitialState(nextAuth);
+      } else {
+        // Just update quick replies if we are mid-conversation
+        state = state.copyWith(
+          quickReplies: _getQuickReplies(nextAuth),
+        );
+      }
+    }
+  }
+
 
   Future<void> addMessage(String text) async {
     final trimmed = text.trim();

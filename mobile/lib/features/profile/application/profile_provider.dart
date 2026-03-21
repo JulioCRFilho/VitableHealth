@@ -31,9 +31,7 @@ class ProfileNotifier extends _$ProfileNotifier {
   Future<UserProfile?> _fetchProfile() async {
     try {
       final profile = await ref.read(profileRepositoryProvider).getProfile();
-      if (profile != null) {
-        unawaited(ref.read(authProvider.notifier).updateFirstName(profile.name));
-      }
+      unawaited(ref.read(authProvider.notifier).updateFirstName(profile.name));
       return profile;
     } catch (e) {
       // If profile fetch fails with 401/403, it's likely a session issue
