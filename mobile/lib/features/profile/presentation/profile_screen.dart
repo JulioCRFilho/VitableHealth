@@ -58,7 +58,7 @@ class ProfileScreen extends ConsumerWidget {
                 onPressed: () => context.pop(),
               ),
               actions: [
-                if (profileState.hasValue)
+                if (profileState.value != null)
                   IconButton(
                     icon: const Icon(Icons.edit_note_rounded),
                     tooltip: 'Edit Profile Details',
@@ -147,12 +147,20 @@ class ProfileScreen extends ConsumerWidget {
           color: isHighContrast ? theme.scaffoldBackgroundColor : null,
         ),
         child: profileState.when(
-          data: (profile) => _ProfileContent(
-            profile: profile,
-            isDark: isDark,
-            onLogout: () => _logout(context, ref),
-            onEdit: () => _showEditDialog(context, ref, profile!),
-          ),
+          data: (profile) => profile != null
+              ? _ProfileContent(
+                  profile: profile,
+                  isDark: isDark,
+                  onLogout: () => _logout(context, ref),
+                  onEdit: () => _showEditDialog(context, ref, profile),
+                )
+              : Center(
+                  child: FilledButton.icon(
+                    onPressed: () => context.go('/?message=I want to login'),
+                    icon: const Icon(Icons.login_rounded),
+                    label: const Text('I want to login'),
+                  ),
+                ),
           loading: () => const Center(
             child: CircularProgressIndicator(color: AppColors.primary),
           ),
@@ -187,10 +195,6 @@ class ProfileScreen extends ConsumerWidget {
                     onPressed: () => context.go('/?message=I want to login'),
                     icon: const Icon(Icons.login_rounded),
                     label: const Text('I want to login'),
-                  ),
-                  TextButton(
-                    onPressed: () => ref.refresh(profileProvider),
-                    child: const Text('Retry'),
                   ),
                 ],
               ),
@@ -313,7 +317,7 @@ class ProfileScreen extends ConsumerWidget {
 }
 
 class _ProfileContent extends ConsumerWidget {
-  final dynamic profile; // UserProfile
+  final UserProfile profile; // UserProfile
   final bool isDark;
   final VoidCallback onLogout;
   final VoidCallback onEdit;

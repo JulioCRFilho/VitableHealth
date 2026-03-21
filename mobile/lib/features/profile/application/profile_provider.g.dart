@@ -60,7 +60,7 @@ String _$profileRepositoryHash() => r'a0bc7d691b11b6d74de6ed365481349b10bf79a2';
 final profileProvider = ProfileNotifierProvider._();
 
 final class ProfileNotifierProvider
-    extends $NotifierProvider<ProfileNotifier, AsyncValue<UserProfile?>> {
+    extends $AsyncNotifierProvider<ProfileNotifier, UserProfile?> {
   ProfileNotifierProvider._()
     : super(
         from: null,
@@ -78,29 +78,20 @@ final class ProfileNotifierProvider
   @$internal
   @override
   ProfileNotifier create() => ProfileNotifier();
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(AsyncValue<UserProfile?> value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<AsyncValue<UserProfile?>>(value),
-    );
-  }
 }
 
-String _$profileNotifierHash() => r'648d618359249805a180734cef1351643fc65576';
+String _$profileNotifierHash() => r'333cc827fbe09cc79ded3b8c15c2e383b86b7950';
 
-abstract class _$ProfileNotifier extends $Notifier<AsyncValue<UserProfile?>> {
-  AsyncValue<UserProfile?> build();
+abstract class _$ProfileNotifier extends $AsyncNotifier<UserProfile?> {
+  FutureOr<UserProfile?> build();
   @$mustCallSuper
   @override
   void runBuild() {
-    final ref =
-        this.ref as $Ref<AsyncValue<UserProfile?>, AsyncValue<UserProfile?>>;
+    final ref = this.ref as $Ref<AsyncValue<UserProfile?>, UserProfile?>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<AsyncValue<UserProfile?>, AsyncValue<UserProfile?>>,
+              AnyNotifier<AsyncValue<UserProfile?>, UserProfile?>,
               AsyncValue<UserProfile?>,
               Object?,
               Object?

@@ -8,10 +8,9 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/design/colors/app_colors.dart';
 import '../application/chat_service.dart';
+import '../../identity/application/auth_notifier.dart';
 import '../../../core/design/theme/high_contrast_provider.dart';
 import '../../../core/design/accessibility/accessibility_dialogs.dart';
-import '../../identity/application/auth_notifier.dart';
-import '../../identity/domain/auth_state.dart';
 
 part 'chat_screen.g.dart';
 
@@ -43,38 +42,54 @@ class ChatState {
     List<ChatMessage>? messages,
     bool? isTyping,
     List<String>? quickReplies,
-  }) =>
-      ChatState(
-        messages: messages ?? this.messages,
-        isTyping: isTyping ?? this.isTyping,
-        quickReplies: quickReplies ?? this.quickReplies,
-      );
+  }) => ChatState(
+    messages: messages ?? this.messages,
+    isTyping: isTyping ?? this.isTyping,
+    quickReplies: quickReplies ?? this.quickReplies,
+  );
 }
 
 // --------------------------------------------------------------------------
 // Notifier
 // --------------------------------------------------------------------------
-@riverpod
+@Riverpod(keepAlive: true)
 class ChatNotifier extends _$ChatNotifier {
   @override
   ChatState build() {
-    // Watch auth state reactively.
-    final authState = ref.watch(authProvider).value;
-    final isLoggedIn = authState?.status == AuthStatus.authenticated;
-    final firstName = authState?.firstName;
+    final authState = ref.watch(authProvider);
 
-    final greeting = isLoggedIn
-        ? 'Hello${firstName != null ? ', $firstName' : ''}! 👋 Welcome back to **Vitable Assistant**.\n\nHow can I help you today?'
-        : 'Hello! 👋 I am your **Vitable Assistant**. How can I help you today?\n\nAre you a new or returning patient?';
+    return authState.maybeWhen(
+      data: (auth) {
+        final firstName = auth.firstName;
+        final greeting = firstName != null
+            ? 'Hello $firstName! 👋 Welcome back to **Vitable Assistant**.\n\nHow can I help you today?'
+            : 'Hello! 👋 I am your **Vitable Assistant**. How can I help you today?\n\nAre you a new or returning patient?';
 
-    final quickReplies = isLoggedIn
-        ? const ['My appointments', 'Update profile', 'See services', 'Talk to a human']
-        : const ['New patient', 'Returning patient', 'See services', 'Talk to a human'];
+        final quickReplies = firstName != null
+            ? const [
+                'My appointments',
+                'Update profile',
+                'See services',
+                'Talk to a human',
+              ]
+            : const [
+                'New patient',
+                'Returning patient',
+                'See services',
+                'Talk to a human',
+              ];
 
-    return ChatState(
-      messages: [ChatMessage(text: greeting, isBot: true)],
-      isTyping: false,
-      quickReplies: quickReplies,
+        return ChatState(
+          messages: [ChatMessage(text: greeting, isBot: true)],
+          isTyping: false,
+          quickReplies: quickReplies,
+        );
+      },
+      orElse: () => const ChatState(
+        messages: [],
+        isTyping: true,
+        quickReplies: [],
+      ),
     );
   }
 
@@ -85,20 +100,22 @@ class ChatNotifier extends _$ChatNotifier {
     final current = state;
     // Add user message + show typing
     state = current.copyWith(
-      messages: [...current.messages, ChatMessage(text: trimmed, isBot: false)],
+      messages: [
+        ...current.messages,
+        ChatMessage(text: trimmed, isBot: false),
+      ],
       isTyping: true,
     );
 
     final chatService = ref.read(chatServiceProvider);
-    final result = await chatService.sendMessage(trimmed);
 
-   
+    final result = await chatService.sendMessage(ref, trimmed);
 
     final updated = state;
     state = updated.copyWith(
       messages: [
         ...updated.messages,
-        ChatMessage(text: result.response, isBot: true),
+        ChatMessage(text: result, isBot: true),
       ],
       isTyping: false,
     );
@@ -182,7 +199,8 @@ class ChatScreen extends HookConsumerWidget {
               child: ListView.builder(
                 controller: scrollController,
                 padding: const EdgeInsets.fromLTRB(16, 130, 16, 12),
-                itemCount: messages.length +
+                itemCount:
+                    messages.length +
                     (isTyping ? 1 : 0) +
                     (messages.length == 1 && quickReplies.isNotEmpty ? 1 : 0),
                 itemBuilder: (context, index) {
@@ -202,10 +220,9 @@ class ChatScreen extends HookConsumerWidget {
 
                   // Typing indicator bubble
                   if (isTyping && index == messages.length) {
-                    return _TypingIndicatorBubble(isDark: isDark)
-                        .animate()
-                        .fadeIn()
-                        .slideX(begin: -0.2);
+                    return _TypingIndicatorBubble(
+                      isDark: isDark,
+                    ).animate().fadeIn().slideX(begin: -0.2);
                   }
 
                   final msg = messages[index];
@@ -262,14 +279,18 @@ class _GlassAppBar extends ConsumerWidget implements PreferredSizeWidget {
         child: Container(
           height: preferredSize.height,
           decoration: BoxDecoration(
-            color: isHighContrast 
-                ? theme.scaffoldBackgroundColor 
-                : (isDark ? Colors.black : Colors.white).withValues(alpha: 0.05),
+            color: isHighContrast
+                ? theme.scaffoldBackgroundColor
+                : (isDark ? Colors.black : Colors.white).withValues(
+                    alpha: 0.05,
+                  ),
             border: Border(
               bottom: BorderSide(
                 color: isHighContrast
                     ? (isDark ? Colors.white : Colors.black)
-                    : (isDark ? Colors.white : AppColors.primary).withValues(alpha: 0.08),
+                    : (isDark ? Colors.white : AppColors.primary).withValues(
+                        alpha: 0.08,
+                      ),
                 width: isHighContrast ? 2.0 : 1.0,
               ),
             ),
@@ -331,8 +352,8 @@ class _GlassAppBar extends ConsumerWidget implements PreferredSizeWidget {
                                   color: isHighContrast
                                       ? (isDark ? Colors.white : Colors.black)
                                       : (isDark
-                                          ? AppColors.textPrimaryDark
-                                          : AppColors.textPrimaryLight),
+                                            ? AppColors.textPrimaryDark
+                                            : AppColors.textPrimaryLight),
                                 ),
                               ),
                               Row(
@@ -353,10 +374,12 @@ class _GlassAppBar extends ConsumerWidget implements PreferredSizeWidget {
                                     style: theme.textTheme.bodySmall?.copyWith(
                                       fontSize: 12,
                                       color: isHighContrast
-                                          ? (isDark ? Colors.white70 : Colors.black87)
+                                          ? (isDark
+                                                ? Colors.white70
+                                                : Colors.black87)
                                           : (isDark
-                                              ? AppColors.textSecondaryDark
-                                              : AppColors.textSecondaryLight),
+                                                ? AppColors.textSecondaryDark
+                                                : AppColors.textSecondaryLight),
                                     ),
                                   ),
                                 ],
@@ -384,8 +407,11 @@ class _GlassAppBar extends ConsumerWidget implements PreferredSizeWidget {
                         child: const CircleAvatar(
                           radius: 14,
                           backgroundColor: AppColors.secondary,
-                          child: Icon(Icons.person_rounded,
-                              size: 18, color: AppColors.primary),
+                          child: Icon(
+                            Icons.person_rounded,
+                            size: 18,
+                            color: AppColors.primary,
+                          ),
                         ),
                       ),
                     ),
@@ -409,9 +435,13 @@ class _GlassAppBar extends ConsumerWidget implements PreferredSizeWidget {
                         value: 'font_size',
                         child: Row(
                           children: [
-                            Icon(Icons.format_size_rounded,
-                                size: 20,
-                                color: isDark ? Colors.white70 : AppColors.primary),
+                            Icon(
+                              Icons.format_size_rounded,
+                              size: 20,
+                              color: isDark
+                                  ? Colors.white70
+                                  : AppColors.primary,
+                            ),
                             const SizedBox(width: 12),
                             const Expanded(child: Text('Text Scale Setting')),
                           ],
@@ -421,9 +451,13 @@ class _GlassAppBar extends ConsumerWidget implements PreferredSizeWidget {
                         value: 'screen_reader',
                         child: Row(
                           children: [
-                            Icon(Icons.record_voice_over_rounded,
-                                size: 20,
-                                color: isDark ? Colors.white70 : AppColors.primary),
+                            Icon(
+                              Icons.record_voice_over_rounded,
+                              size: 20,
+                              color: isDark
+                                  ? Colors.white70
+                                  : AppColors.primary,
+                            ),
                             const SizedBox(width: 12),
                             const Expanded(child: Text('Screen Reader Help')),
                           ],
@@ -433,9 +467,13 @@ class _GlassAppBar extends ConsumerWidget implements PreferredSizeWidget {
                         value: 'voice_control',
                         child: Row(
                           children: [
-                            Icon(Icons.settings_voice_rounded,
-                                size: 20,
-                                color: isDark ? Colors.white70 : AppColors.primary),
+                            Icon(
+                              Icons.settings_voice_rounded,
+                              size: 20,
+                              color: isDark
+                                  ? Colors.white70
+                                  : AppColors.primary,
+                            ),
                             const SizedBox(width: 12),
                             const Expanded(child: Text('Voice Control Guide')),
                           ],
@@ -446,9 +484,13 @@ class _GlassAppBar extends ConsumerWidget implements PreferredSizeWidget {
                         value: 'contrast',
                         child: Row(
                           children: [
-                            Icon(Icons.contrast_rounded,
-                                size: 20,
-                                color: isDark ? Colors.white70 : AppColors.primary),
+                            Icon(
+                              Icons.contrast_rounded,
+                              size: 20,
+                              color: isDark
+                                  ? Colors.white70
+                                  : AppColors.primary,
+                            ),
                             const SizedBox(width: 12),
                             const Expanded(child: Text('High Contrast')),
                           ],
@@ -463,9 +505,11 @@ class _GlassAppBar extends ConsumerWidget implements PreferredSizeWidget {
                         final isHighContrast = ref.read(highContrastProvider);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(isHighContrast 
-                              ? 'High contrast mode enabled' 
-                              : 'High contrast mode disabled'),
+                            content: Text(
+                              isHighContrast
+                                  ? 'High contrast mode enabled'
+                                  : 'High contrast mode disabled',
+                            ),
                             behavior: SnackBarBehavior.floating,
                             duration: const Duration(seconds: 2),
                             shape: RoundedRectangleBorder(
@@ -477,7 +521,9 @@ class _GlassAppBar extends ConsumerWidget implements PreferredSizeWidget {
                         // Logic for other accessibility menu options
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('Accessibility feature: $value coming soon!'),
+                            content: Text(
+                              'Accessibility feature: $value coming soon!',
+                            ),
                             behavior: SnackBarBehavior.floating,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
@@ -540,8 +586,11 @@ class _MessageBubble extends ConsumerWidget {
               borderRadius: BorderRadius.circular(8),
             ),
             child: const ExcludeSemantics(
-              child: Icon(Icons.health_and_safety_rounded,
-                  color: Colors.white, size: 16),
+              child: Icon(
+                Icons.health_and_safety_rounded,
+                color: Colors.white,
+                size: 16,
+              ),
             ),
           ),
           Flexible(
@@ -549,8 +598,10 @@ class _MessageBubble extends ConsumerWidget {
               label: 'Vitable Assistant message',
               child: Container(
                 margin: const EdgeInsets.only(bottom: 12, right: 48),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: isHighContrast
                       ? (isDark ? Colors.black : Colors.white)
@@ -571,7 +622,9 @@ class _MessageBubble extends ConsumerWidget {
                       ? null
                       : [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.06),
+                            color: Colors.black.withValues(
+                              alpha: isDark ? 0.25 : 0.06,
+                            ),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
@@ -581,13 +634,13 @@ class _MessageBubble extends ConsumerWidget {
                   data: message.text,
                   styleSheet: MarkdownStyleSheet(
                     p: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          height: 1.5,
-                          color: isHighContrast
-                              ? (isDark ? Colors.white : Colors.black)
-                              : (isDark
-                                  ? AppColors.textPrimaryDark
-                                  : AppColors.textPrimaryLight),
-                        ),
+                      height: 1.5,
+                      color: isHighContrast
+                          ? (isDark ? Colors.white : Colors.black)
+                          : (isDark
+                                ? AppColors.textPrimaryDark
+                                : AppColors.textPrimaryLight),
+                    ),
                     strong: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: isHighContrast
@@ -610,8 +663,10 @@ class _MessageBubble extends ConsumerWidget {
               label: 'Your message',
               child: Container(
                 margin: const EdgeInsets.only(bottom: 12, left: 48),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   gradient: isHighContrast
                       ? null
@@ -648,11 +703,11 @@ class _MessageBubble extends ConsumerWidget {
                 child: Text(
                   message.text,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: isHighContrast
-                            ? (isDark ? Colors.black : Colors.white)
-                            : Colors.white,
-                        height: 1.5,
-                      ),
+                    color: isHighContrast
+                        ? (isDark ? Colors.black : Colors.white)
+                        : Colors.white,
+                    height: 1.5,
+                  ),
                 ),
               ),
             ),
@@ -698,8 +753,11 @@ class _TypingIndicatorBubble extends ConsumerWidget {
               borderRadius: BorderRadius.circular(8),
             ),
             child: const ExcludeSemantics(
-              child: Icon(Icons.health_and_safety_rounded,
-                  color: Colors.white, size: 16),
+              child: Icon(
+                Icons.health_and_safety_rounded,
+                color: Colors.white,
+                size: 16,
+              ),
             ),
           ),
           Container(
@@ -725,7 +783,9 @@ class _TypingIndicatorBubble extends ConsumerWidget {
                   ? null
                   : [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.06),
+                        color: Colors.black.withValues(
+                          alpha: isDark ? 0.25 : 0.06,
+                        ),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -735,16 +795,16 @@ class _TypingIndicatorBubble extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: List.generate(3, (i) {
                 return Container(
-                  width: 8,
-                  height: 8,
-                  margin: EdgeInsets.only(left: i == 0 ? 0 : 5),
-                  decoration: BoxDecoration(
-                    color: isHighContrast
-                        ? (isDark ? Colors.white : Colors.black)
-                        : AppColors.primary.withValues(alpha: 0.6),
-                    shape: BoxShape.circle,
-                  ),
-                )
+                      width: 8,
+                      height: 8,
+                      margin: EdgeInsets.only(left: i == 0 ? 0 : 5),
+                      decoration: BoxDecoration(
+                        color: isHighContrast
+                            ? (isDark ? Colors.white : Colors.black)
+                            : AppColors.primary.withValues(alpha: 0.6),
+                        shape: BoxShape.circle,
+                      ),
+                    )
                     .animate(onPlay: (c) => c.repeat())
                     .scaleXY(
                       begin: 0.5,
@@ -800,7 +860,9 @@ class _QuickReplies extends ConsumerWidget {
                     button: true,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 8),
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: isHighContrast
                             ? (isDark ? Colors.black : Colors.white)
@@ -815,19 +877,16 @@ class _QuickReplies extends ConsumerWidget {
                       ),
                       child: Text(
                         r,
-                        style:
-                            Theme.of(context).textTheme.labelMedium?.copyWith(
-                                  color: isHighContrast
-                                      ? (isDark ? Colors.white : Colors.black)
-                                      : AppColors.primary,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                        style: Theme.of(context).textTheme.labelMedium
+                            ?.copyWith(
+                              color: isHighContrast
+                                  ? (isDark ? Colors.white : Colors.black)
+                                  : AppColors.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
                       ),
                     ),
-                  )
-                      .animate()
-                      .fadeIn()
-                      .scale(begin: const Offset(0.9, 0.9)),
+                  ).animate().fadeIn().scale(begin: const Offset(0.9, 0.9)),
                 ),
               )
               .toList(),
@@ -860,14 +919,18 @@ class _InputArea extends ConsumerWidget {
         filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
         child: Container(
           decoration: BoxDecoration(
-            color: isHighContrast 
-                ? theme.scaffoldBackgroundColor 
-                : (isDark ? Colors.black : Colors.white).withValues(alpha: 0.05),
+            color: isHighContrast
+                ? theme.scaffoldBackgroundColor
+                : (isDark ? Colors.black : Colors.white).withValues(
+                    alpha: 0.05,
+                  ),
             border: Border(
               top: BorderSide(
                 color: isHighContrast
                     ? (isDark ? Colors.white : Colors.black)
-                    : (isDark ? Colors.white : AppColors.primary).withValues(alpha: 0.08),
+                    : (isDark ? Colors.white : AppColors.primary).withValues(
+                        alpha: 0.08,
+                      ),
                 width: isHighContrast ? 2.0 : 1.0,
               ),
             ),
@@ -887,21 +950,21 @@ class _InputArea extends ConsumerWidget {
                       maxLines: 4,
                       minLines: 1,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: isDark ? Colors.white : Colors.black87,
-                          ),
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
                       keyboardType: TextInputType.multiline,
                       textCapitalization: TextCapitalization.sentences,
                       decoration: InputDecoration(
                         hintText: 'Type your message...',
-                        hintStyle:
-                            Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: isDark
-                                      ? Colors.white54
-                                      : Colors.black45,
-                                ),
+                        hintStyle: Theme.of(context).textTheme.bodyMedium
+                            ?.copyWith(
+                              color: isDark ? Colors.white54 : Colors.black45,
+                            ),
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 4, vertical: 8),
+                          horizontal: 4,
+                          vertical: 8,
+                        ),
                       ),
                       onSubmitted: (_) => onSend(),
                     ),
@@ -915,32 +978,38 @@ class _InputArea extends ConsumerWidget {
                     button: true,
                     child: GestureDetector(
                       onTap: onSend,
-                      child: Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [AppColors.primary, Color(0xFF14B8A6)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primary.withValues(alpha: 0.40),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: const Icon(
-                          Icons.send_rounded,
-                          color: Colors.white,
-                          size: 22,
-                        ),
-                      )
-                          .animate(target: 1)
-                          .scaleXY(begin: 1, end: 0.92, duration: 100.ms),
+                      child:
+                          Container(
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [
+                                      AppColors.primary,
+                                      Color(0xFF14B8A6),
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.primary.withValues(
+                                        alpha: 0.40,
+                                      ),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: const Icon(
+                                  Icons.send_rounded,
+                                  color: Colors.white,
+                                  size: 22,
+                                ),
+                              )
+                              .animate(target: 1)
+                              .scaleXY(begin: 1, end: 0.92, duration: 100.ms),
                     ),
                   ),
                 ),

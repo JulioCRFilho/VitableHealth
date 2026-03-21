@@ -48,4 +48,4 @@ final class ChatServiceProvider
   }
 }
 
-String _$chatServiceHash() => r'6b5906d5f2e6e5432e2de89b474be29b11071634';
+String _$chatServiceHash() => r'5f2ca04451631d57af07986849ad15bd1d73cf49';

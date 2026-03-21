@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mobile/features/identity/application/auth_notifier.dart';
+import 'package:mobile/features/profile/application/profile_provider.dart';
 import 'core/design/theme/app_theme.dart';
 import 'core/routing/app_router.dart';
 
@@ -15,20 +17,28 @@ class VitableHealthApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Watch the auth state to ensure it's initialized from secure storage on startup
+    ref.watch(authProvider);
+    ref.watch(profileProvider);
+
     // Watch the custom text scale factor
     final textScaleFactor = ref.watch(textScaleProvider);
-    
+
     // Watch high contrast manual override
     final isHighContrast = ref.watch(highContrastProvider);
 
     return MediaQuery(
-      data: MediaQuery.of(context).copyWith(
-        textScaler: TextScaler.linear(textScaleFactor),
-      ),
+      data: MediaQuery.of(
+        context,
+      ).copyWith(textScaler: TextScaler.linear(textScaleFactor)),
       child: MaterialApp.router(
         title: 'Vitable Health',
-        theme: isHighContrast ? AppTheme.highContrastLightTheme : AppTheme.lightTheme,
-        darkTheme: isHighContrast ? AppTheme.highContrastDarkTheme : AppTheme.darkTheme,
+        theme: isHighContrast
+            ? AppTheme.highContrastLightTheme
+            : AppTheme.lightTheme,
+        darkTheme: isHighContrast
+            ? AppTheme.highContrastDarkTheme
+            : AppTheme.darkTheme,
         highContrastTheme: AppTheme.highContrastLightTheme,
         highContrastDarkTheme: AppTheme.highContrastDarkTheme,
         themeMode: ThemeMode.system,
