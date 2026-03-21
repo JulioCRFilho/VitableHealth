@@ -51,7 +51,7 @@ Guidelines:
             "first_name": first_name,
             "last_name": last_name,
             "name": f"{first_name} {last_name}",
-            "email": email,
+            "email": email.lower(),
             "password": hashed,
             "address": address,
             "phone": phone,
@@ -64,7 +64,7 @@ Guidelines:
     def login_user(self, email: str, password: str) -> str:
         """Logs in a user and returns a confirmation message."""
         users = FirestoreHelper.list_collection('users')
-        user = next((u for u in users if u.get('email') == email), None)
+        user = next((u for u in users if u.get('email', '').lower() == email.lower()), None)
         if not user:
             return "Login failed: User not found."
         
