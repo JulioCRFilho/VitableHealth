@@ -147,7 +147,6 @@ class ProfileScreen extends ConsumerWidget {
                   profile: profile,
                   isDark: isDark,
                   onLogout: () => _logout(context, ref),
-                  onEdit: () => _showEditDialog(context, ref, profile),
                 )
               : Center(
                   child: FilledButton.icon(
@@ -200,88 +199,6 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _showEditDialog(
-    BuildContext context,
-    WidgetRef ref,
-    UserProfile profile,
-  ) async {
-    final nameController = TextEditingController(text: profile.name);
-    final emailController = TextEditingController(text: profile.email);
-    final formKey = GlobalKey<FormState>();
-
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Edit Profile'),
-        content: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Semantics(
-                label: 'Enter your full name',
-                child: TextFormField(
-                  controller: nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Name',
-                    prefixIcon: Icon(Icons.person_outline_rounded),
-                  ),
-                  validator: (v) => (v == null || v.trim().isEmpty)
-                      ? 'Name is required'
-                      : null,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Semantics(
-                label: 'Enter your email address',
-                child: TextFormField(
-                  controller: emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.email_outlined),
-                  ),
-                  validator: (v) => (v == null || !v.contains('@'))
-                      ? 'Enter a valid email'
-                      : null,
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              if (!formKey.currentState!.validate()) return;
-
-              final updated = profile.copyWith(
-                name: nameController.text.trim(),
-                email: emailController.text.trim(),
-              );
-
-              Navigator.of(ctx).pop();
-              await ref.read(profileProvider.notifier).updateProfile(updated);
-
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Profile updated!')),
-                );
-              }
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-
-    nameController.dispose();
-    emailController.dispose();
-  }
 
   Future<void> _logout(BuildContext context, WidgetRef ref) async {
     final confirmed = await showDialog<bool>(
@@ -315,13 +232,10 @@ class _ProfileContent extends ConsumerWidget {
   final UserProfile profile; // UserProfile
   final bool isDark;
   final VoidCallback onLogout;
-  final VoidCallback onEdit;
-
   const _ProfileContent({
     required this.profile,
     required this.isDark,
     required this.onLogout,
-    required this.onEdit,
   });
 
   @override
@@ -505,12 +419,7 @@ class _ProfileContent extends ConsumerWidget {
 
         Column(
           children: [
-            _ActionTile(
-              icon: Icons.edit_note_rounded,
-              title: 'Edit Profile Details',
-              onTap: onEdit,
-              isDark: isDark,
-            ),
+
             _ActionTile(
               icon: Icons.notifications_active_rounded,
               title: 'Notifications',
