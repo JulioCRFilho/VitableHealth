@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../identity/application/auth_notifier.dart';
+import '../../identity/domain/auth_state.dart';
 
 part 'chat_service.g.dart';
 
@@ -39,8 +40,18 @@ class ChatService {
         final data = jsonDecode(response.body);
 
         // If the backend returns a new token (e.g. session update), update auth state
-        if (data['token'] != null) {
-          _ref.read(authProvider.notifier).setUser(data['token']);
+        if (data.containsKey('token')) {
+          final newToken = data['token'];
+          if (newToken != null) {
+            _ref.read(authProvider.notifier).setUser(newToken);
+          } else {
+            // If token is explicitly null, it means the session was cleared (logout)
+            final currentAuth = _ref.read(authProvider).value;
+            if (currentAuth?.status == AuthStatus.authenticated) {
+              debugPrint('DEBUG: ChatService: Backend signaled logout. Clearing local state.');
+              _ref.read(authProvider.notifier).logout();
+            }
+          }
         }
 
         return (data['response'] ?? "I'm sorry, I couldn't process that.")

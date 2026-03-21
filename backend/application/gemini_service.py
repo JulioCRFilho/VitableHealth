@@ -4,6 +4,7 @@ import logging
 from datetime import datetime, timezone
 from infrastructure.firestore_helper import FirestoreHelper
 from infrastructure.security import SecurityHelper
+from infrastructure.formatting_helper import FormattingHelper
 
 logger = logging.getLogger(__name__)
 
@@ -51,14 +52,19 @@ Security & Privacy:
 
     # --- Tool Definitions ---
 
-    def register_user(self, first_name: str, last_name: str, email: str, password: str, address: str, phone: str, document: str) -> str:
-        """Registers a new user with extended details and a hashed password."""
+        # Normalize and format inputs
+        first_name = FormattingHelper.format_name(first_name)
+        last_name = FormattingHelper.format_name(last_name)
+        email = FormattingHelper.format_email(email)
+        phone = FormattingHelper.format_phone(phone)
+        document = FormattingHelper.format_document(document)
+
         hashed = SecurityHelper.hash_password(password)
         uid = FirestoreHelper.create_document('users', {
             "first_name": first_name,
             "last_name": last_name,
             "name": f"{first_name} {last_name}",
-            "email": email.lower(),
+            "email": email,
             "password": hashed,
             "address": address,
             "phone": phone,
@@ -70,8 +76,9 @@ Security & Privacy:
 
     def login_user(self, email: str, password: str) -> str:
         """Logs in a user and returns a confirmation message."""
+        email = FormattingHelper.format_email(email)
         users = FirestoreHelper.list_collection('users')
-        user = next((u for u in users if u.get('email', '').lower() == email.lower()), None)
+        user = next((u for u in users if u.get('email', '') == email), None)
         if not user:
             return "Login failed: User not found."
         
@@ -108,6 +115,7 @@ Security & Privacy:
 
     def request_password_recovery(self, email: str) -> str:
         """Initiates password recovery."""
+        email = FormattingHelper.format_email(email)
         return f"A recovery link has been sent to {email}."
 
     def change_password(self, current_password: str, new_password: str) -> str:
@@ -144,9 +152,12 @@ Security & Privacy:
         if not user:
             return "Error: User profile not found in database."
         
+        # Mask sensitive data for display
+        masked_doc = FormattingHelper.mask_text(user.get('document', 'N/A'))
+        
         return (f"Profile Details:\n"
                 f"- Name: {user.get('name')}\n"
-                f"- Document: {user.get('document', 'N/A')}\n"
+                f"- Document: {masked_doc}\n"
                 f"- Email: {user.get('email')}\n"
                 f"- Phone: {user.get('phone', 'N/A')}\n"
                 f"- Address: {user.get('address', 'N/A')}\n"
@@ -158,7 +169,7 @@ Security & Privacy:
             return "Please login first to update your profile."
         
         updates = {}
-        if phone: updates['phone'] = phone
+        if phone: updates['phone'] = FormattingHelper.format_phone(phone)
         if address: updates['address'] = address
         
         if not updates:
