@@ -29,7 +29,9 @@ Responsibilities:
    - Use `change_password` if authenticated. Requirements: current_password, new_password.
 2. Appointment Management:
    - Use `list_appointments` to show scheduled visits.
-   - Use `schedule_appointment` to book new ones.
+   - Use `list_doctors` to show available doctors and specialists.
+   - Use `get_available_slots` to see available times for a specific doctor on a specific date (YYYY-MM-DD).
+   - Use `schedule_appointment` to book new ones. Requirements: doctor_id, date (YYYY-MM-DD), time (HH:MM).
 3. Health Services:
    - Use `get_health_plan` to consult coverage.
 4. Profile Management:
@@ -100,18 +102,38 @@ Security & Privacy:
         
         return "\n".join([f"- {a['time']} with {a['doctor']} ({a['status']})" for a in appointments])
 
-    def schedule_appointment(self, doctor: str, time: str) -> str:
-        """Schedules a new appointment for the user."""
+    def list_doctors(self) -> str:
+        """Lists available doctors and specialists for telemedicine appointments."""
+        from application.appointment_service import AppointmentService
+        doctors = AppointmentService.get_available_doctors()
+        if not doctors:
+            return "No doctors are currently available."
+        return "\n".join([f"- {d['name']} ({d['specialty']}) - ID: {d['id']}" for d in doctors])
+
+    def get_available_slots(self, doctor_id: str, date: str) -> str:
+        """Checks available time slots for a specific doctor on a given date (YYYY-MM-DD)."""
+        from application.appointment_service import AppointmentService
+        result = AppointmentService.get_available_slots(doctor_id, date)
+        if "error" in result:
+            return f"Error checking slots: {result['error']}"
+        slots = result.get("slots", [])
+        if not slots:
+            return f"No available slots for {doctor_id} on {date}."
+        return f"Available slots for {doctor_id} on {date}:\n" + "\n".join([f"- {s}" for s in slots])
+
+    def schedule_appointment(self, doctor_id: str, date: str, time: str) -> str:
+        """Schedules a new telemedicine appointment for the user."""
         if not self.user_id:
             return "Please login first to schedule an appointment."
+            
+        from application.appointment_service import AppointmentService
+        result = AppointmentService.book_appointment(doctor_id, date, time, self.user_id)
         
-        aid = FirestoreHelper.create_subcollection_document('appointments', self.user_id, 'appointments', {
-            "user_id": self.user_id,
-            "time": time,
-            "doctor": doctor,
-            "status": "scheduled"
-        })
-        return f"Appointment scheduled successfully. ID: {aid}"
+        if "error" in result:
+            return f"Failed to schedule appointment: {result['error']}"
+            
+        appointment = result["appointment"]
+        return f"Appointment scheduled successfully. ID: {appointment['id']} on {appointment['date']} at {appointment['time']}."
 
     def request_password_recovery(self, email: str) -> str:
         """Initiates password recovery."""
@@ -201,6 +223,8 @@ Security & Privacy:
                 self.register_user,
                 self.login_user,
                 self.list_appointments,
+                self.list_doctors,
+                self.get_available_slots,
                 self.schedule_appointment,
                 self.request_password_recovery,
                 self.change_password,

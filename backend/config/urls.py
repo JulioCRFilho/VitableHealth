@@ -16,10 +16,12 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from presentation.views import ChatView, ProfileView
+from presentation.views import ChatView, ProfileView, AvailableSlotsView, AppointmentView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/chat/', ChatView.as_view(), name='chat'),
     path('api/profile/', ProfileView.as_view(), name='profile'),
+    path('api/appointments/slots/', AvailableSlotsView.as_view(), name='available_slots'),
+    path('api/appointments/', AppointmentView.as_view(), name='appointments'),
 ]

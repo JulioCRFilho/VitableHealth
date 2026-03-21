@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 import '../../features/chatbot/presentation/chat_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
+import '../../features/telemedicine/presentation/telemedicine_screen.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/',
@@ -15,6 +16,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/profile',
       builder: (context, state) => const ProfileScreen(),
+    ),
+    GoRoute(
+      path: '/telemedicine',
+      builder: (context, state) => const TelemedicineScreen(),
     ),
   ],
 );

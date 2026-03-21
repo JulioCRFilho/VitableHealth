@@ -419,7 +419,12 @@ class _ProfileContent extends ConsumerWidget {
 
         Column(
           children: [
-
+            _ActionTile(
+              icon: Icons.medical_services_rounded,
+              title: 'Telemedicine Consultation',
+              onTap: () => context.push('/telemedicine'),
+              isDark: isDark,
+            ),
             _ActionTile(
               icon: Icons.notifications_active_rounded,
               title: 'Notifications',

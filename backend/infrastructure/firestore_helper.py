@@ -84,6 +84,19 @@ class FirestoreHelper:
         if not db: return []
         docs = db.collection(parent_col).document(parent_id).collection(sub_col).limit(limit).stream()
         return [{"id": d.id, **d.to_dict()} for d in docs]
+        
+    @staticmethod
+    def query_collection(collection: str, filters: list) -> list:
+        """
+        Query a collection with a list of filters.
+        Each filter is a tuple: (field_name, operator, value)
+        """
+        if not db: return []
+        query = db.collection(collection)
+        for field, op, value in filters:
+            query = query.where(field, op, value)
+        docs = query.stream()
+        return [{"id": d.id, **d.to_dict()} for d in docs]
     
     @staticmethod
     def delete_document(collection: str, doc_id: str):

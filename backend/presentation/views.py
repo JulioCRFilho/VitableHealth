@@ -100,3 +100,60 @@ class ProfileView(APIView):
         
         updated_profile = FirestoreHelper.get_document('users', user_id)
         return Response(updated_profile)
+
+class AvailableSlotsView(APIView):
+    """
+    Endpoint to get available time slots for a specific doctor on a specific date.
+    """
+    def get(self, request):
+        doctor_id = request.query_params.get('doctor_id')
+        date_str = request.query_params.get('date')
+        
+        if not doctor_id or not date_str:
+            return Response({'error': 'doctor_id and date are required'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return Response({'error': 'Authorization required'}, status=status.HTTP_401_UNAUTHORIZED)
+            
+        from application.appointment_service import AppointmentService
+        result = AppointmentService.get_available_slots(doctor_id, date_str)
+        
+        if "error" in result:
+            return Response({'error': result["error"]}, status=status.HTTP_400_BAD_REQUEST)
+            
+        return Response({'slots': result["slots"]})
+
+class AppointmentView(APIView):
+    """
+    Endpoint to book an appointment.
+    """
+    def post(self, request):
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return Response({'error': 'Authorization required'}, status=status.HTTP_401_UNAUTHORIZED)
+            
+        token = auth_header.split(' ')[1]
+        decoded = SecurityHelper.decode_jwt(token, settings.SECRET_KEY)
+        if 'error' in decoded:
+            return Response({'error': decoded['error']}, status=status.HTTP_401_UNAUTHORIZED)
+            
+        user_id = decoded.get('user_id')
+        if not user_id:
+            return Response({'error': 'Invalid token payload'}, status=status.HTTP_401_UNAUTHORIZED)
+            
+        doctor_id = request.data.get('doctor_id')
+        date_str = request.data.get('date')
+        time_str = request.data.get('time')
+        notes = request.data.get('notes', '')
+        
+        if not all([doctor_id, date_str, time_str]):
+            return Response({'error': 'doctor_id, date, and time are required'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        from application.appointment_service import AppointmentService
+        result = AppointmentService.book_appointment(doctor_id, date_str, time_str, user_id, notes)
+        
+        if "error" in result:
+            return Response({'error': result["error"]}, status=status.HTTP_400_BAD_REQUEST)
+            
+        return Response(result["appointment"], status=status.HTTP_201_CREATED)
