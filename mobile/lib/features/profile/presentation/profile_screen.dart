@@ -58,13 +58,6 @@ class ProfileScreen extends ConsumerWidget {
                 onPressed: () => context.pop(),
               ),
               actions: [
-                if (profileState.value != null)
-                  IconButton(
-                    icon: const Icon(Icons.edit_note_rounded),
-                    tooltip: 'Edit Profile Details',
-                    onPressed: () =>
-                        _showEditDialog(context, ref, profileState.value!),
-                  ),
                 PopupMenuButton<String>(
                   icon: const Icon(Icons.accessibility_new_rounded),
                   tooltip: 'Accessibility Options',
@@ -91,6 +84,8 @@ class ProfileScreen extends ConsumerWidget {
                           ),
                         ),
                       );
+                    } else if (value == 'screen_reader') {
+                      showScreenReaderHelpDialog(context);
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(

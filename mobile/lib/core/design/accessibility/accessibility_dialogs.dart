@@ -59,3 +59,77 @@ void showTextScaleDialog(BuildContext context, WidgetRef ref) {
     },
   );
 }
+
+void showScreenReaderHelpDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Row(
+        children: [
+          Icon(Icons.record_voice_over_rounded, color: AppColors.primary),
+          SizedBox(width: 12),
+          Text('Screen Reader Help'),
+        ],
+      ),
+      content: const Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'The Vitable app is optimized for VoiceOver (iOS) and TalkBack (Android).',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 12),
+          Text('• Messages are announced as "Assistant said" or "You said".'),
+          Text('• The typing indicator will automatically notify you when the assistant is responding.'),
+          Text('• Action buttons and quick replies are clearly labeled for easy navigation.'),
+          SizedBox(height: 12),
+          Text('Tip: Use swipe gestures to navigate between messages and focus on the input field at the bottom to reply.'),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Got it'),
+        ),
+      ],
+    ),
+  );
+}
+
+void showVoiceControlGuideDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Row(
+        children: [
+          Icon(Icons.settings_voice_rounded, color: AppColors.primary),
+          SizedBox(width: 12),
+          Text('Voice Control Guide'),
+        ],
+      ),
+      content: const Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Interact with the chatbot using system voice commands:',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 12),
+          Text('• "Tap Send" to send your message.'),
+          Text('• "Tap [Option name]" to select a quick reply (e.g., "Tap New patient").'),
+          Text('• "Scroll down" to see the latest messages.'),
+          SizedBox(height: 12),
+          Text('You can also dictate your message by focusing the input field and using the keyboard dictation feature.'),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Close'),
+        ),
+      ],
+    ),
+  );
+}

@@ -242,6 +242,7 @@ class ChatScreen extends HookConsumerWidget {
               child: ListView.builder(
                 controller: scrollController,
                 padding: const EdgeInsets.fromLTRB(16, 130, 16, 12),
+                addSemanticIndexes: true,
                 itemCount:
                     messages.length +
                     (isTyping ? 1 : 0) +
@@ -560,6 +561,10 @@ class _GlassAppBar extends ConsumerWidget implements PreferredSizeWidget {
                             ),
                           ),
                         );
+                      } else if (value == 'screen_reader') {
+                        showScreenReaderHelpDialog(context);
+                      } else if (value == 'voice_control') {
+                        showVoiceControlGuideDialog(context);
                       } else {
                         // Logic for other accessibility menu options
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -612,150 +617,158 @@ class _MessageBubble extends ConsumerWidget {
 
     Widget bubble;
     if (isBot) {
-      bubble = Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          // Small bot avatar
-          Container(
-            width: 30,
-            height: 30,
-            margin: const EdgeInsets.only(right: 8, bottom: 4),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppColors.primary, Color(0xFF14B8A6)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const ExcludeSemantics(
-              child: Icon(
-                Icons.health_and_safety_rounded,
-                color: Colors.white,
-                size: 16,
-              ),
-            ),
-          ),
-          Flexible(
-            child: Semantics(
-              label: 'Vitable Assistant message',
+      bubble = MergeSemantics(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            // Small bot avatar
+            ExcludeSemantics(
               child: Container(
-                margin: const EdgeInsets.only(bottom: 12, right: 48),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
+                width: 30,
+                height: 30,
+                margin: const EdgeInsets.only(right: 8, bottom: 4),
                 decoration: BoxDecoration(
-                  color: isHighContrast
-                      ? (isDark ? Colors.black : Colors.white)
-                      : (isDark ? const Color(0xFF1E3A37) : Colors.white),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(18),
-                    topRight: Radius.circular(18),
-                    bottomRight: Radius.circular(18),
-                    bottomLeft: Radius.circular(4),
+                  gradient: const LinearGradient(
+                    colors: [AppColors.primary, Color(0xFF14B8A6)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                  border: isHighContrast
-                      ? Border.all(
-                          color: isDark ? Colors.white : Colors.black,
-                          width: 2,
-                        )
-                      : null,
-                  boxShadow: isHighContrast
-                      ? null
-                      : [
-                          BoxShadow(
-                            color: Colors.black.withValues(
-                              alpha: isDark ? 0.25 : 0.06,
-                            ),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: MarkdownBody(
-                  data: message.text,
-                  styleSheet: MarkdownStyleSheet(
-                    p: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      height: 1.5,
-                      color: isHighContrast
-                          ? (isDark ? Colors.white : Colors.black)
-                          : (isDark
-                                ? AppColors.textPrimaryDark
-                                : AppColors.textPrimaryLight),
-                    ),
-                    strong: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: isHighContrast
-                          ? (isDark ? Colors.white : Colors.black)
-                          : (isDark ? AppColors.secondary : AppColors.primary),
-                    ),
-                  ),
+                child: const Icon(
+                  Icons.health_and_safety_rounded,
+                  color: Colors.white,
+                  size: 16,
                 ),
               ),
             ),
-          ),
-        ],
-      );
-    } else {
-      bubble = Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          Flexible(
-            child: Semantics(
-              label: 'Your message',
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 12, left: 48),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  gradient: isHighContrast
-                      ? null
-                      : const LinearGradient(
-                          colors: [AppColors.primary, Color(0xFF0D8073)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                  color: isHighContrast
-                      ? (isDark ? Colors.white : Colors.black)
-                      : null,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(18),
-                    topRight: Radius.circular(18),
-                    bottomLeft: Radius.circular(18),
-                    bottomRight: Radius.circular(4),
+            Flexible(
+              child: Semantics(
+                label: 'Assistant said: ${message.text}',
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 12, right: 48),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
                   ),
-                  border: isHighContrast
-                      ? Border.all(
-                          color: isDark ? Colors.black : Colors.white,
-                          width: 2,
-                        )
-                      : null,
-                  boxShadow: isHighContrast
-                      ? null
-                      : [
-                          BoxShadow(
-                            color: AppColors.primary.withValues(alpha: 0.30),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                ),
-                child: Text(
-                  message.text,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  decoration: BoxDecoration(
                     color: isHighContrast
                         ? (isDark ? Colors.black : Colors.white)
-                        : Colors.white,
-                    height: 1.5,
+                        : (isDark ? const Color(0xFF1E3A37) : Colors.white),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(18),
+                      topRight: Radius.circular(18),
+                      bottomRight: Radius.circular(18),
+                      bottomLeft: Radius.circular(4),
+                    ),
+                    border: isHighContrast
+                        ? Border.all(
+                            color: isDark ? Colors.white : Colors.black,
+                            width: 2,
+                          )
+                        : null,
+                    boxShadow: isHighContrast
+                        ? null
+                        : [
+                            BoxShadow(
+                              color: Colors.black.withValues(
+                                alpha: isDark ? 0.25 : 0.06,
+                              ),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                  ),
+                  child: ExcludeSemantics(
+                    child: MarkdownBody(
+                      data: message.text,
+                      styleSheet: MarkdownStyleSheet(
+                        p: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          height: 1.5,
+                          color: isHighContrast
+                              ? (isDark ? Colors.white : Colors.black)
+                              : (isDark
+                                    ? AppColors.textPrimaryDark
+                                    : AppColors.textPrimaryLight),
+                        ),
+                        strong: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: isHighContrast
+                              ? (isDark ? Colors.white : Colors.black)
+                              : (isDark ? AppColors.secondary : AppColors.primary),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
+      );
+    } else {
+      bubble = MergeSemantics(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Flexible(
+              child: Semantics(
+                label: 'You said: ${message.text}',
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 12, left: 48),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    gradient: isHighContrast
+                        ? null
+                        : const LinearGradient(
+                            colors: [AppColors.primary, Color(0xFF0D8073)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                    color: isHighContrast
+                        ? (isDark ? Colors.white : Colors.black)
+                        : null,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(18),
+                      topRight: Radius.circular(18),
+                      bottomLeft: Radius.circular(18),
+                      bottomRight: Radius.circular(4),
+                    ),
+                    border: isHighContrast
+                        ? Border.all(
+                            color: isDark ? Colors.black : Colors.white,
+                            width: 2,
+                          )
+                        : null,
+                    boxShadow: isHighContrast
+                        ? null
+                        : [
+                            BoxShadow(
+                              color: AppColors.primary.withValues(alpha: 0.30),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                  ),
+                  child: ExcludeSemantics(
+                    child: Text(
+                      message.text,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: isHighContrast
+                            ? (isDark ? Colors.black : Colors.white)
+                            : Colors.white,
+                        height: 1.5,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       );
     }
 
@@ -783,20 +796,20 @@ class _TypingIndicatorBubble extends ConsumerWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          Container(
-            width: 30,
-            height: 30,
-            margin: const EdgeInsets.only(right: 8, bottom: 4),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppColors.primary, Color(0xFF14B8A6)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+          ExcludeSemantics(
+            child: Container(
+              width: 30,
+              height: 30,
+              margin: const EdgeInsets.only(right: 8, bottom: 4),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [AppColors.primary, Color(0xFF14B8A6)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(8),
               ),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const ExcludeSemantics(
-              child: Icon(
+              child: const Icon(
                 Icons.health_and_safety_rounded,
                 color: Colors.white,
                 size: 16,
@@ -834,36 +847,38 @@ class _TypingIndicatorBubble extends ConsumerWidget {
                       ),
                     ],
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: List.generate(3, (i) {
-                return Container(
-                      width: 8,
-                      height: 8,
-                      margin: EdgeInsets.only(left: i == 0 ? 0 : 5),
-                      decoration: BoxDecoration(
-                        color: isHighContrast
-                            ? (isDark ? Colors.white : Colors.black)
-                            : AppColors.primary.withValues(alpha: 0.6),
-                        shape: BoxShape.circle,
-                      ),
-                    )
-                    .animate(onPlay: (c) => c.repeat())
-                    .scaleXY(
-                      begin: 0.5,
-                      end: 1.0,
-                      duration: 600.ms,
-                      delay: (i * 200).ms,
-                      curve: Curves.easeInOut,
-                    )
-                    .then()
-                    .scaleXY(
-                      begin: 1.0,
-                      end: 0.5,
-                      duration: 600.ms,
-                      curve: Curves.easeInOut,
-                    );
-              }),
+            child: ExcludeSemantics(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(3, (i) {
+                  return Container(
+                        width: 8,
+                        height: 8,
+                        margin: EdgeInsets.only(left: i == 0 ? 0 : 5),
+                        decoration: BoxDecoration(
+                          color: isHighContrast
+                              ? (isDark ? Colors.white : Colors.black)
+                              : AppColors.primary.withValues(alpha: 0.6),
+                          shape: BoxShape.circle,
+                        ),
+                      )
+                      .animate(onPlay: (c) => c.repeat())
+                      .scaleXY(
+                        begin: 0.5,
+                        end: 1.0,
+                        duration: 600.ms,
+                        delay: (i * 200).ms,
+                        curve: Curves.easeInOut,
+                      )
+                      .then()
+                      .scaleXY(
+                        begin: 1.0,
+                        end: 0.5,
+                        duration: 600.ms,
+                        curve: Curves.easeInOut,
+                      );
+                }),
+              ),
             ),
           ),
         ],
@@ -918,15 +933,17 @@ class _QuickReplies extends ConsumerWidget {
                           width: isHighContrast ? 2 : 1,
                         ),
                       ),
-                      child: Text(
-                        r,
-                        style: Theme.of(context).textTheme.labelMedium
-                            ?.copyWith(
-                              color: isHighContrast
-                                  ? (isDark ? Colors.white : Colors.black)
-                                  : AppColors.primary,
-                              fontWeight: FontWeight.w600,
-                            ),
+                      child: ExcludeSemantics(
+                        child: Text(
+                          r,
+                          style: Theme.of(context).textTheme.labelMedium
+                              ?.copyWith(
+                                color: isHighContrast
+                                    ? (isDark ? Colors.white : Colors.black)
+                                    : AppColors.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
                       ),
                     ),
                   ).animate().fadeIn().scale(begin: const Offset(0.9, 0.9)),
@@ -1019,6 +1036,7 @@ class _InputArea extends ConsumerWidget {
                   child: Semantics(
                     label: 'Send message',
                     button: true,
+                    hint: 'Sends the text in the input field to the assistant',
                     child: GestureDetector(
                       onTap: onSend,
                       child:
