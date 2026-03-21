@@ -19,7 +19,7 @@ class GeminiService:
         if self.api_key:
             self.client = genai.Client(api_key=self.api_key)
         
-        self.model_name = 'gemini-1.5-flash'  # Current stable model (or gemini-2.0-flash)
+        self.model_name = 'gemini-2.0-flash'  # Stable general-purpose model in 2026
         self.system_instruction = '''
 You are the Vitable Health AI Assistant. You manage the entire user journey.
 Current User ID: {user_id}
