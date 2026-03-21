@@ -167,6 +167,17 @@ Security & Privacy:
         FirestoreHelper.write_document('users', self.user_id, updates)
         return f"Profile updated successfully: {', '.join(updates.keys())}."
 
+    def logout_user(self) -> str:
+        """Logs out the current user and clears the session context."""
+        if not self.user_id:
+            return "You are already logged out."
+        
+        old_user_id = self.user_id
+        self.user_id = None
+        # Re-initialize system instruction with "Not Authenticated"
+        self.system_instruction = self.system_instruction.replace(old_user_id, "Not Authenticated")
+        return "You have been successfully logged out. Is there anything else I can help you with as a guest?"
+
     # --- Communication ---
 
     def send_message(self, message: str, history: list = None) -> str:
@@ -184,7 +195,8 @@ Security & Privacy:
                 self.change_password,
                 self.get_health_plan,
                 self.get_user_profile,
-                self.update_user_profile
+                self.update_user_profile,
+                self.logout_user
             ]
 
             # Generate response with automatic tool calling

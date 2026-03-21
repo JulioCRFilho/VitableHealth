@@ -506,6 +506,12 @@ class _ProfileContent extends ConsumerWidget {
         Column(
           children: [
             _ActionTile(
+              icon: Icons.edit_note_rounded,
+              title: 'Edit Profile Details',
+              onTap: onEdit,
+              isDark: isDark,
+            ),
+            _ActionTile(
               icon: Icons.notifications_active_rounded,
               title: 'Notifications',
               onTap: () {},
