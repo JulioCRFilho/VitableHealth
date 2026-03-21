@@ -38,6 +38,7 @@ Future<void> iAmOnTheProfileScreen(WidgetTester tester) async {
     email: 'test@example.com',
     planId: 'basic',
     status: 'active',
+    language: 'en',
   );
 
   final dummyAuth = AuthState(

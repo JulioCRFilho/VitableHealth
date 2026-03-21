@@ -19,6 +19,7 @@ class SecureStorageService {
   static const _tokenKey = 'auth_token';
   static const _refreshTokenKey = 'refresh_token';
   static const _firstNameKey = 'user_first_name';
+  static const _languageKey = 'user_language';
 
   const SecureStorageService();
 
@@ -46,10 +47,19 @@ class SecureStorageService {
     return await _storage.read(key: _firstNameKey);
   }
 
+  Future<void> saveLanguage(String language) async {
+    await _storage.write(key: _languageKey, value: language);
+  }
+
+  Future<String?> getLanguage() async {
+    return await _storage.read(key: _languageKey);
+  }
+
   Future<void> deleteTokens() async {
     await _storage.delete(key: _tokenKey);
     await _storage.delete(key: _refreshTokenKey);
     await _storage.delete(key: _firstNameKey);
+    await _storage.delete(key: _languageKey);
   }
 
   Future<void> clearAll() async {

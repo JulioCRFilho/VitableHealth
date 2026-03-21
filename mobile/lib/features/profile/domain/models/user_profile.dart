@@ -5,6 +5,7 @@ class UserProfile {
   final String planId;
   final String status;
   final String? profilePictureUrl;
+  final String language;
 
   const UserProfile({
     required this.id,
@@ -12,6 +13,7 @@ class UserProfile {
     required this.email,
     required this.planId,
     required this.status,
+    required this.language,
     this.profilePictureUrl,
   });
 
@@ -23,6 +25,7 @@ class UserProfile {
       planId: map['plan_id'] ?? '',
       status: map['status'] ?? 'active',
       profilePictureUrl: map['profile_picture_url'],
+      language: map['language'] ?? 'en',
     );
   }
 
@@ -33,6 +36,7 @@ class UserProfile {
       'plan_id': planId,
       'status': status,
       'profile_picture_url': profilePictureUrl,
+      'language': language,
     };
   }
 
@@ -43,6 +47,7 @@ class UserProfile {
     String? planId,
     String? status,
     String? profilePictureUrl,
+    String? language,
   }) {
     return UserProfile(
       id: id ?? this.id,
@@ -51,6 +56,7 @@ class UserProfile {
       planId: planId ?? this.planId,
       status: status ?? this.status,
       profilePictureUrl: profilePictureUrl ?? this.profilePictureUrl,
+      language: language ?? this.language,
     );
   }
 }

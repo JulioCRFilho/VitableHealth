@@ -1,4 +1,4 @@
-import 'dart:async';
+import 'dart:io';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import '../../../core/storage/secure_storage_service.dart';
@@ -30,9 +30,8 @@ class AuthNotifier extends _$AuthNotifier {
       // Check local expiry only
       if (JwtDecoder.isExpired(token)) {
         print('DEBUG: AuthNotifier: Token expired locally');
-        // Don't even return the authenticated state; clear storage and return unauthenticated
         await logout();
-        return const AuthState(status: AuthStatus.unauthenticated);
+        return AuthState(status: AuthStatus.unauthenticated, language: _getDeviceLanguage());
       }
 
       if (claimFirstName == null) {
@@ -41,17 +40,26 @@ class AuthNotifier extends _$AuthNotifier {
         print('DEBUG: AuthNotifier: Using persistent fallback name: $claimFirstName');
       }
 
+      final language = await secureStorage.getLanguage() ?? _getDeviceLanguage();
+
       final newState = AuthState(
         status: AuthStatus.authenticated,
         token: token,
         firstName: claimFirstName,
+        language: language,
       );
-      print('DEBUG: AuthNotifier.build() initialized: status=${newState.status}, name=${newState.firstName}');
+      print('DEBUG: AuthNotifier.build() initialized: status=${newState.status}, name=${newState.firstName}, lang=${newState.language}');
       return newState;
     }
 
     print('DEBUG: AuthNotifier: No token found in storage');
-    return const AuthState(status: AuthStatus.unauthenticated);
+    final deviceLanguage = _getDeviceLanguage();
+    return AuthState(status: AuthStatus.unauthenticated, language: deviceLanguage);
+  }
+
+  String _getDeviceLanguage() {
+    final locale = Platform.localeName.split('_').first.toLowerCase();
+    return (locale == 'pt') ? 'pt' : 'en';
   }
 
   Future<void> login(String token) async {
@@ -71,11 +79,14 @@ class AuthNotifier extends _$AuthNotifier {
       }
     } catch (_) {}
 
+    final language = await secureStorage.getLanguage() ?? _getDeviceLanguage();
+
     state = AsyncValue.data(
       AuthState(
         status: AuthStatus.authenticated,
         token: token,
         firstName: firstName,
+        language: language,
       ),
     );
     print('DEBUG: AuthNotifier.login() complete');
@@ -83,7 +94,6 @@ class AuthNotifier extends _$AuthNotifier {
 
   Future<void> setUser(String token) async {
     final secureStorage = ref.read(secureStorageServiceProvider);
-
     await secureStorage.saveToken(token);
 
     String? firstName;
@@ -93,17 +103,18 @@ class AuthNotifier extends _$AuthNotifier {
         firstName = (decoded['name'] as String).split(' ').first;
         await secureStorage.saveFirstName(firstName);
       }
-    } catch (_) {
-      // name not found in token
-    } 
+    } catch (_) {}
+
+    final language = await secureStorage.getLanguage() ?? _getDeviceLanguage();
 
     final newState = AuthState(
       status: AuthStatus.authenticated,
       token: token,
       firstName: firstName ?? state.value?.firstName,
+      language: language,
     );
     state = AsyncValue.data(newState);
-    print('DEBUG: AuthNotifier.setUser() complete: status=${newState.status}, name=${newState.firstName}');
+    print('DEBUG: AuthNotifier.setUser() complete: status=${newState.status}, name=${newState.firstName}, lang=${newState.language}');
   }
 
   Future<void> logout() async {
@@ -111,24 +122,29 @@ class AuthNotifier extends _$AuthNotifier {
     final secureStorage = ref.read(secureStorageServiceProvider);
     await secureStorage.deleteTokens();
 
-    state = const AsyncValue.data(
-      AuthState(status: AuthStatus.unauthenticated),
+    state = AsyncValue.data(
+      AuthState(status: AuthStatus.unauthenticated, language: _getDeviceLanguage()),
     );
   }
 
-  /// Called by other features when they hit a 401
   Future<void> handleSessionExpired() => logout();
 
-  /// Helper to update the first name after a profile fetch somewhere else
   Future<void> updateFirstName(String name) async {
     if (state.hasValue) {
       final secureStorage = ref.read(secureStorageServiceProvider);
       await secureStorage.saveFirstName(name);
-      final newState = state.value!.copyWith(firstName: name);
+      final newState = state.value!.copyWith(firstName: name.split(' ').first);
       state = AsyncValue.data(newState);
-      print('DEBUG: AuthNotifier.updateFirstName() complete: name=${newState.firstName}');
-    } else {
-      print('DEBUG: AuthNotifier.updateFirstName() ignored: state has no value');
+    }
+  }
+
+  Future<void> updateLanguage(String language) async {
+    if (state.hasValue) {
+      final secureStorage = ref.read(secureStorageServiceProvider);
+      await secureStorage.saveLanguage(language);
+      final newState = state.value!.copyWith(language: language);
+      state = AsyncValue.data(newState);
+      print('DEBUG: AuthNotifier.updateLanguage() complete: lang=${newState.language}');
     }
   }
 }

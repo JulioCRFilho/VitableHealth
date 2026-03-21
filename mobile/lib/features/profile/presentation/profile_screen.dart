@@ -238,6 +238,79 @@ class _ProfileContent extends ConsumerWidget {
     required this.onLogout,
   });
 
+  void _showLanguagePicker(
+    BuildContext context,
+    WidgetRef ref,
+    UserProfile profile,
+  ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isHighContrast = ref.watch(highContrastProvider);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF0F172A) : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          border: isHighContrast
+              ? Border.all(color: isDark ? Colors.white : Colors.black, width: 2)
+              : null,
+        ),
+        padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 24),
+                decoration: BoxDecoration(
+                  color: (isDark ? Colors.white : Colors.black).withValues(
+                    alpha: 0.1,
+                  ),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            Text(
+              'Select Language',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 24),
+            _LanguageOption(
+              label: 'English',
+              isSelected: profile.language == 'en',
+              onTap: () async {
+                final updated = profile.copyWith(language: 'en');
+                await ref.read(profileProvider.notifier).updateProfile(updated);
+                if (context.mounted) Navigator.pop(context);
+              },
+              isDark: isDark,
+              isHighContrast: isHighContrast,
+            ),
+            const SizedBox(height: 12),
+            _LanguageOption(
+              label: 'Portuguese',
+              isSelected: profile.language == 'pt',
+              onTap: () async {
+                final updated = profile.copyWith(language: 'pt');
+                await ref.read(profileProvider.notifier).updateProfile(updated);
+                if (context.mounted) Navigator.pop(context);
+              },
+              isDark: isDark,
+              isHighContrast: isHighContrast,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
@@ -426,6 +499,23 @@ class _ProfileContent extends ConsumerWidget {
               isDark: isDark,
             ),
             _ActionTile(
+              icon: Icons.language_rounded,
+              title: 'Language',
+              trailing: Text(
+                profile.language == 'pt' ? 'Portuguese' : 'English',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: isHighContrast
+                      ? (isDark ? Colors.white70 : Colors.black87)
+                      : (isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              onTap: () => _showLanguagePicker(context, ref, profile),
+              isDark: isDark,
+            ),
+            _ActionTile(
               icon: Icons.notifications_active_rounded,
               title: 'Notifications',
               onTap: () {},
@@ -597,6 +687,7 @@ class _ActionTile extends ConsumerWidget {
   final VoidCallback onTap;
   final bool isDestructive;
   final bool isDark;
+  final Widget? trailing;
 
   const _ActionTile({
     required this.icon,
@@ -604,6 +695,7 @@ class _ActionTile extends ConsumerWidget {
     required this.onTap,
     this.isDestructive = false,
     required this.isDark,
+    this.trailing,
   });
 
   @override
@@ -663,6 +755,10 @@ class _ActionTile extends ConsumerWidget {
                   ),
                 ),
                 const Spacer(),
+                if (trailing != null) ...[
+                  trailing!,
+                  const SizedBox(width: 8),
+                ],
                 Icon(
                   Icons.chevron_right_rounded,
                   color: (isDestructive ? Colors.redAccent : AppColors.primary)
@@ -671,6 +767,71 @@ class _ActionTile extends ConsumerWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LanguageOption extends StatelessWidget {
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+  final bool isDark;
+  final bool isHighContrast;
+
+  const _LanguageOption({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+    required this.isDark,
+    required this.isHighContrast,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primary.withValues(alpha: 0.1)
+              : (isDark ? Colors.white : AppColors.primary).withValues(
+                  alpha: 0.04,
+                ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected
+                ? AppColors.primary
+                : (isHighContrast
+                    ? (isDark ? Colors.white : Colors.black)
+                    : (isDark ? Colors.white : AppColors.primary).withValues(
+                        alpha: 0.08,
+                      )),
+            width: isSelected || isHighContrast ? 2 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                color: isSelected
+                    ? AppColors.primary
+                    : (isDark ? Colors.white : AppColors.textPrimaryLight),
+              ),
+            ),
+            const Spacer(),
+            if (isSelected)
+              const Icon(
+                Icons.check_circle_rounded,
+                color: AppColors.primary,
+              ),
+          ],
         ),
       ),
     );

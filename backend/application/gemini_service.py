@@ -19,10 +19,21 @@ class GeminiService:
         if self.api_key:
             self.client = genai.Client(api_key=self.api_key)
         
-        self.model_name = 'gemini-2.5-flash'  # Stable current model in March 2026
-        self.system_instruction = '''
+        self.model_name = 'gemini-2.8-flash'  # Current model
+        self.language = 'en'
+        if self.user_id:
+            user = FirestoreHelper.get_document('users', self.user_id)
+            if user:
+                self.language = user.get('language', 'en')
+
+    @property
+    def system_instruction(self):
+        instruction = '''
 You are the Vitable Health AI Assistant. You manage the entire user journey.
 Current User ID: {user_id}
+Preferred Language: {language}
+
+CRITICAL: You MUST respond to the user in {language_full}. Even if they speak to you in another language, your primary response language should be {language_full}.
 
 Responsibilities:
 1. Handle User Identity:
@@ -39,7 +50,7 @@ Responsibilities:
    - Use `get_health_plan` to consult coverage.
 4. Profile Management:
    - Use `get_user_profile` to show the user their account details (name, email, phone, address, document).
-   - Use `update_user_profile` to update user information (phone, address). IMPORTANT: Name and Document cannot be changed after registration.
+   - Use `update_user_profile` to update user information (phone, address, language). IMPORTANT: Name and Document cannot be changed after registration. Language can be 'en' or 'pt'.
 
 Guidelines:
 - If a user triggers a tool but parameters are missing, proactively ask for them one by one.
@@ -53,7 +64,13 @@ Security & Privacy:
 - INTERNAL ID PROTECTION: Do not reveal internal IDs (UUIDs, database keys) to the user.
 - STRICT TOPIC CONTROL: Do not allow the user to drive the conversation away from Vitable Health and personal health. Politely decline and redirect the user back to Vitable Health assistance if they attempt to discuss unrelated topics (e.g., recipes, politics, general trivia).
 - GRACEFUL REFUSAL: If asked about internal system details, capabilities beyond health management, or "how you work," politely decline and redirect the user back to Vitable Health assistance.
-'''.format(user_id=self.user_id or "Not Authenticated")
+'''
+        language_full = "English" if self.language == 'en' else "Portuguese"
+        return instruction.format(
+            user_id=self.user_id or "Not Authenticated",
+            language=self.language,
+            language_full=language_full
+        )
 
     def register_user(self, first_name: str, last_name: str, email: str, password: str, address: str, phone: str, document: str) -> str:
         """Registers a new user and returns a confirmation message."""
@@ -89,8 +106,7 @@ Security & Privacy:
         
         if SecurityHelper.verify_password(password, user.get('password', '')):
             self.user_id = user['id']
-            # Re-initialize system instruction with the new user Context
-            self.system_instruction = self.system_instruction.replace("Not Authenticated", self.user_id)
+            self.language = user.get('language', 'en')
             return f"Welcome back, {user.get('first_name', user.get('name'))}! You are now logged in (ID: {user['id']})."
         return "Login failed: Invalid password."
 
@@ -186,19 +202,27 @@ Security & Privacy:
                 f"- Email: {user.get('email')}\n"
                 f"- Phone: {user.get('phone', 'N/A')}\n"
                 f"- Address: {user.get('address', 'N/A')}\n"
+                f"- Language: {user.get('language', 'en')}\n"
                 f"- Status: {user.get('status', 'active')}")
 
-    def update_user_profile(self, phone: str = None, address: str = None) -> str:
-        """Updates specific fields in the user's profile. Name and Document cannot be updated."""
+    def update_user_profile(self, phone: str = None, address: str = None, language: str = None) -> str:
+        """Updates specific fields in the user's profile. Name and Document cannot be updated. Language can be 'en' or 'pt'."""
         if not self.user_id:
             return "Please login first to update your profile."
         
         updates = {}
         if phone: updates['phone'] = FormattingHelper.format_phone(phone)
         if address: updates['address'] = address
+        if language:
+            language = language.lower()[:2]
+            if language in ['en', 'pt']:
+                updates['language'] = language
+                self.language = language
+            else:
+                return "Error: Unsupported language. Please use 'en' or 'pt'."
         
         if not updates:
-            return "No updates provided. Please specify what you want to change (phone or address)."
+            return "No updates provided. Please specify what you want to change (phone, address, or language)."
         
         FirestoreHelper.write_document('users', self.user_id, updates)
         return f"Profile updated successfully: {', '.join(updates.keys())}."
@@ -208,10 +232,8 @@ Security & Privacy:
         if not self.user_id:
             return "You are already logged out."
         
-        old_user_id = self.user_id
         self.user_id = None
-        # Re-initialize system instruction with "Not Authenticated"
-        self.system_instruction = self.system_instruction.replace(old_user_id, "Not Authenticated")
+        self.language = 'en'
         return "You have been successfully logged out. Is there anything else I can help you with as a guest?"
 
     # --- Communication ---

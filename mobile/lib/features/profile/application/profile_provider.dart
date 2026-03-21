@@ -32,6 +32,7 @@ class ProfileNotifier extends _$ProfileNotifier {
     try {
       final profile = await ref.read(profileRepositoryProvider).getProfile();
       unawaited(ref.read(authProvider.notifier).updateFirstName(profile.name));
+      unawaited(ref.read(authProvider.notifier).updateLanguage(profile.language));
       return profile;
     } catch (e) {
       // If profile fetch fails with 401/403, it's likely a session issue
@@ -48,8 +49,9 @@ class ProfileNotifier extends _$ProfileNotifier {
       await repository.updateProfile(profile);
       state = AsyncValue.data(profile);
 
-      // Update first name in Auth state too
+      // Update first name and language in Auth state too
       unawaited(ref.read(authProvider.notifier).updateFirstName(profile.name));
+      unawaited(ref.read(authProvider.notifier).updateLanguage(profile.language));
     } catch (e) {
       throw Exception(e);
     }

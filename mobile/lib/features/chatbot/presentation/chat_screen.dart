@@ -69,9 +69,15 @@ class ChatNotifier extends _$ChatNotifier {
 
   ChatState _createInitialState(AuthState? auth) {
     final firstName = auth?.firstName;
-    final greeting = firstName != null
-        ? 'Hello $firstName! 👋 Welcome back to **Vitable Assistant**.\n\nHow can I help you today?'
-        : 'Hello! 👋 I am your **Vitable Assistant**. How can I help you today?\n\nAre you a new or returning patient?';
+    final isPt = auth?.language == 'pt';
+
+    final greeting = isPt
+        ? (firstName != null
+            ? 'Olá $firstName! 👋 Bem-vindo de volta ao **Assistente Vitable**.\n\nComo posso ajudar hoje?'
+            : 'Olá! 👋 Eu sou seu **Assistente Vitable**. Como posso ajudar hoje?\n\nVocê é um paciente novo ou já nos conhece?')
+        : (firstName != null
+            ? 'Hello $firstName! 👋 Welcome back to **Vitable Assistant**.\n\nHow can I help you today?'
+            : 'Hello! 👋 I am your **Vitable Assistant**. How can I help you today?\n\nAre you a new or returning patient?');
 
     final quickReplies = _getQuickReplies(auth);
 
@@ -84,6 +90,24 @@ class ChatNotifier extends _$ChatNotifier {
 
   List<String> _getQuickReplies(AuthState? auth) {
     final firstName = auth?.firstName;
+    final isPt = auth?.language == 'pt';
+
+    if (isPt) {
+      return firstName != null
+          ? const [
+              'Minhas consultas',
+              'Atualizar perfil',
+              'Ver serviços',
+              'Falar com um humano',
+            ]
+          : const [
+              'Novo paciente',
+              'Paciente antigo',
+              'Ver serviços',
+              'Falar com um humano',
+            ];
+    }
+
     return firstName != null
         ? const [
             'My appointments',

@@ -76,8 +76,13 @@ class ProfileView(APIView):
                 'email': '',
                 'planId': 'basic',
                 'status': 'active',
-                'profilePictureUrl': None
+                'profilePictureUrl': None,
+                'language': 'en'
             }
+        else:
+            # Ensure language field exists
+            if 'language' not in profile:
+                profile['language'] = 'en'
         
         return Response(profile)
 
@@ -96,7 +101,7 @@ class ProfileView(APIView):
             return Response({'error': 'Invalid token payload'}, status=status.HTTP_401_UNAUTHORIZED)
         
         # Allowed fields for update
-        allowed_fields = ['name', 'email', 'profilePictureUrl']
+        allowed_fields = ['name', 'email', 'profilePictureUrl', 'language']
         update_data = {k: v for k, v in request.data.items() if k in allowed_fields}
         
         if not update_data:
