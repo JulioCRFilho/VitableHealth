@@ -19,7 +19,7 @@ class GeminiService:
         if self.api_key:
             self.client = genai.Client(api_key=self.api_key)
         
-        self.model_name = 'gemini-2.8-flash'  # Current model
+        self.model_name = 'gemini-3.0-flash'  # Current model
         self.language = 'en'
         if self.user_id:
             user = FirestoreHelper.get_document('users', self.user_id)
