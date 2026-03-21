@@ -108,17 +108,26 @@ class ChatNotifier extends _$ChatNotifier {
     // Detected Logout
     if (prevAuth?.status == AuthStatus.authenticated && 
         nextAuth.status == AuthStatus.unauthenticated) {
+      debugPrint('DEBUG: ChatNotifier: Logout detected. Resetting to guest greeting.');
       state = _createInitialState(nextAuth);
       return;
     }
 
     // Detected Login or Name Update
     if (nextAuth.status == AuthStatus.authenticated) {
-      // If we only have the greeting, we can update it to be personalized
-      if (state.messages.length <= 1) {
+      final wasGuest = prevAuth == null || prevAuth.status == AuthStatus.unauthenticated;
+      final isNewConversation = state.messages.length <= 1;
+
+      if (wasGuest && isNewConversation) {
+        debugPrint('DEBUG: ChatNotifier: New Login detected. Personalizing greeting.');
+        state = _createInitialState(nextAuth);
+      } else if (isNewConversation && prevAuth?.firstName != nextAuth.firstName) {
+        // Name changed/appeared while we only have the greeting
+        debugPrint('DEBUG: ChatNotifier: Name update detected. Updating greeting.');
         state = _createInitialState(nextAuth);
       } else {
-        // Just update quick replies if we are mid-conversation
+        // Mid-conversation or stable session: just update quick replies
+        debugPrint('DEBUG: ChatNotifier: Auth change ignored for reset (messages: ${state.messages.length}). Updating quick replies.');
         state = state.copyWith(
           quickReplies: _getQuickReplies(nextAuth),
         );
@@ -143,7 +152,7 @@ class ChatNotifier extends _$ChatNotifier {
 
     final chatService = ref.read(chatServiceProvider);
 
-    final result = await chatService.sendMessage(ref, trimmed);
+    final result = await chatService.sendMessage(trimmed);
 
     final updated = state;
     state = updated.copyWith(

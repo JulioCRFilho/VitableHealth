@@ -7,15 +7,24 @@ import '../../identity/application/auth_notifier.dart';
 
 part 'chat_service.g.dart';
 
-@riverpod
-ChatService chatService(Ref ref) => ChatService();
+@Riverpod(keepAlive: true)
+ChatService chatService(Ref ref) {
+  ref.keepAlive();
+  return ChatService(ref);
+}
 
 class ChatService {
+  final Ref _ref;
+  ChatService(this._ref);
+
   final String _endpoint = '${ApiConstants.baseUrl}/api/chat/';
 
-  Future<String> sendMessage(Ref ref, String message) async {
+  Future<String> sendMessage(String message) async {
     try {
-      final token = ref.watch(authProvider).value?.token;
+      // Use .read() to avoid registering a persistent dependency.
+      // If .watch() is used with the ChatNotifier's Ref, any auth change
+      // will cause the Entire ChatNotifier to rebuild.
+      final token = _ref.read(authProvider).value?.token;
 
       final response = await http.post(
         Uri.parse(_endpoint),
@@ -29,8 +38,9 @@ class ChatService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
+        // If the backend returns a new token (e.g. session update), update auth state
         if (data['token'] != null) {
-          ref.read(authProvider.notifier).setUser(data['token']);
+          _ref.read(authProvider.notifier).setUser(data['token']);
         }
 
         return (data['response'] ?? "I'm sorry, I couldn't process that.")

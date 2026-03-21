@@ -21,7 +21,7 @@ final class ChatServiceProvider
         argument: null,
         retry: null,
         name: r'chatServiceProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -48,4 +48,4 @@ final class ChatServiceProvider
   }
 }
 
-String _$chatServiceHash() => r'5f2ca04451631d57af07986849ad15bd1d73cf49';
+String _$chatServiceHash() => r'8fc6334a717c1f630c3bfb6ce4efeee85293948a';

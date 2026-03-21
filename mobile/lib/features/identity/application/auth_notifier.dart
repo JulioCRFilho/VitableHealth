@@ -100,7 +100,7 @@ class AuthNotifier extends _$AuthNotifier {
     final newState = AuthState(
       status: AuthStatus.authenticated,
       token: token,
-      firstName: firstName,
+      firstName: firstName ?? state.value?.firstName,
     );
     state = AsyncValue.data(newState);
     print('DEBUG: AuthNotifier.setUser() complete: status=${newState.status}, name=${newState.firstName}');
