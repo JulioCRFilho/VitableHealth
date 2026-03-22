@@ -47,7 +47,8 @@ Responsibilities:
    - Use `get_available_slots` to see available times for a specific doctor on a specific date (YYYY-MM-DD).
    - Use `schedule_appointment` to book new ones. Requirements: doctor_id, date (YYYY-MM-DD), time (HH:MM).
 3. Health Services:
-   - Use `get_health_plan` to consult coverage.
+   - Use `get_available_plans` to show the user the health plans available for purchase, including names, prices, and features.
+   - Use `get_health_plan` to consult the user's currently active plan details.
 4. Profile Management:
    - Use `get_user_profile` to show the user their account details (name, email, phone, address, document).
    - Use `update_user_profile` to update user information (phone, address, language). IMPORTANT: Name and Document cannot be changed after registration. Language can be 'en' or 'pt'.
@@ -172,17 +173,54 @@ Security & Privacy:
         FirestoreHelper.write_document('users', self.user_id, {"password": hashed})
         return "Security update: Password changed successfully."
 
+    def get_available_plans(self) -> str:
+        """Lists all available health plans for customers."""
+        plans = FirestoreHelper.list_collection('plans')
+        if not plans:
+            return "Information about our health plans is currently unavailable. Please try again later."
+        
+        plan_list = []
+        for p in plans:
+            features = ", ".join(p.get('features', []))
+            price = p.get('price', 0)
+            price_str = f"${price:.2f}" if price > 0 else "Free"
+            plan_list.append(f"- **{p.get('name', 'Unnamed Plan')}** ({price_str}): {features}")
+        
+        return "Available Health Plans:\n" + "\n".join(plan_list) + "\n\nYou can ask me for more details or how to subscribe to any of these!"
+ 
     def get_health_plan(self) -> str:
         """Retrieves health plan information for the current user."""
         if not self.user_id:
             return "Please login to view your health plan details."
         
-        plans = FirestoreHelper.list_subcollection('users', self.user_id, 'plans')
-        if not plans:
-            return "No active health plan found for your account."
+        user = FirestoreHelper.get_document('users', self.user_id)
+        if not user:
+            return "Error: User profile not found."
+            
+        plan_id = user.get('plan_id')
+        if not plan_id:
+            # Check legacy subcollection location
+            plans = FirestoreHelper.list_subcollection('users', self.user_id, 'plans')
+            if not plans:
+                return "You don't have an active health plan subscribed yet. Would you like to see our available plans?"
+            plan = plans[0]
+        else:
+            # Fetch from global plans collection
+            plan = FirestoreHelper.get_document('plans', plan_id)
+            if not plan:
+                return "Your profile indicates a plan we couldn't find in our records. Please contact support."
+ 
+        name = plan.get('name', 'Basic Coverage')
+        features = plan.get('features', [])
+        benefits = "\n".join([f"  - {f}" for f in features]) if features else ""
         
-        plan = plans[0]
-        return f"Your active plan: {plan.get('name', 'Basic Coverage')} (Status: {plan.get('status', 'Active')})."
+        status = plan.get('status', 'Active') # Some plans might have their own status, otherwise use user's or default
+        
+        response = f"Your active plan: **{name}** (Status: {status})"
+        if benefits:
+            response += f"\n\nYour benefits include:\n{benefits}"
+            
+        return response
 
     def get_user_profile(self) -> str:
         """Retrieves official profile information for the current user."""
@@ -253,6 +291,7 @@ Security & Privacy:
                 self.schedule_appointment,
                 self.request_password_recovery,
                 self.change_password,
+                self.get_available_plans,
                 self.get_health_plan,
                 self.get_user_profile,
                 self.update_user_profile,
