@@ -20,7 +20,7 @@ class ChatService {
 
   final String _endpoint = '${ApiConstants.baseUrl}/api/chat/';
 
-  Future<String> sendMessage(String message) async {
+  Future<String> sendMessage(String message, {String? sessionId}) async {
     try {
       // Use .read() to avoid registering a persistent dependency.
       // If .watch() is used with the ChatNotifier's Ref, any auth change
@@ -33,7 +33,10 @@ class ChatService {
           'Content-Type': 'application/json',
           if (token != null) 'Authorization': 'Bearer $token',
         },
-        body: jsonEncode({'message': message}),
+        body: jsonEncode({
+          'message': message,
+          if (sessionId != null) 'session_id': sessionId,
+        }),
       );
 
       if (response.statusCode == 200) {

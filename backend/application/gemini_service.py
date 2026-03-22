@@ -276,7 +276,7 @@ Security & Privacy:
 
     # --- Communication ---
 
-    def send_message(self, message: str, history: list = None) -> str:
+    def send_message(self, message: str, session_id: str = None) -> str:
         if not self.api_key or not self.client:
             return f"Note: AI Assistant is not fully configured (missing API key). Received: {message}"
 
@@ -298,17 +298,36 @@ Security & Privacy:
                 self.logout_user
             ]
 
-            # Generate response with automatic tool calling
-            response = self.client.models.generate_content(
+            # 1. Load history from Firestore if session_id is provided
+            history = []
+            if session_id:
+                session_doc = FirestoreHelper.get_document('chat_sessions', session_id)
+                if session_doc and 'history' in session_doc:
+                    history = session_doc['history']
+
+            # 2. Rehydrate the chat session with history
+            chat = self.client.chats.create(
                 model=self.model_name,
-                contents=message, # For simplicity in this demo, history handling can be added back
                 config={
                     'system_instruction': self.system_instruction,
                     'tools': tools,
-                }
+                },
+                history=history
             )
+
+            # 3. Send message and let SDK handle automatic tool calls & thought signatures
+            response = chat.send_message(message)
             
-            # The SDK handles the tool calls and returns the final response
+            # 4. Save updated history back to Firestore (preserving thought signatures)
+            if session_id:
+                # The SDK's history is a list of Content objects; we convert it to dicts for Firestore
+                serializable_history = [h.to_dict() if hasattr(h, 'to_dict') else h for h in chat.history]
+                FirestoreHelper.write_document('chat_sessions', session_id, {
+                    'history': serializable_history,
+                    'updated_at': datetime.now(timezone.utc).isoformat(),
+                    'user_id': self.user_id
+                })
+
             return response.text
         except Exception as e:
             logger.error(f"Error calling Gemini API: {e}")

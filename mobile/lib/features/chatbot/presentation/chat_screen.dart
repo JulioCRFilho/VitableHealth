@@ -12,6 +12,7 @@ import '../../identity/application/auth_notifier.dart';
 import '../../identity/domain/auth_state.dart';
 import '../../../core/design/theme/high_contrast_provider.dart';
 import '../../../core/design/accessibility/accessibility_dialogs.dart';
+import 'package:uuid/uuid.dart';
 
 part 'chat_screen.g.dart';
 
@@ -32,21 +33,25 @@ class ChatState {
   final List<ChatMessage> messages;
   final bool isTyping;
   final List<String> quickReplies;
+  final String sessionId;
 
   const ChatState({
     required this.messages,
     required this.isTyping,
     required this.quickReplies,
+    required this.sessionId,
   });
 
   ChatState copyWith({
     List<ChatMessage>? messages,
     bool? isTyping,
     List<String>? quickReplies,
+    String? sessionId,
   }) => ChatState(
     messages: messages ?? this.messages,
     isTyping: isTyping ?? this.isTyping,
     quickReplies: quickReplies ?? this.quickReplies,
+    sessionId: sessionId ?? this.sessionId,
   );
 }
 
@@ -70,6 +75,7 @@ class ChatNotifier extends _$ChatNotifier {
   ChatState _createInitialState(AuthState? auth) {
     final firstName = auth?.firstName;
     final isPt = auth?.language == 'pt';
+    final sessionId = const Uuid().v4();
 
     final greeting = isPt
         ? (firstName != null
@@ -85,6 +91,7 @@ class ChatNotifier extends _$ChatNotifier {
       messages: [ChatMessage(text: greeting, isBot: true)],
       isTyping: false,
       quickReplies: quickReplies,
+      sessionId: sessionId,
     );
   }
 
@@ -176,7 +183,10 @@ class ChatNotifier extends _$ChatNotifier {
 
     final chatService = ref.read(chatServiceProvider);
 
-    final result = await chatService.sendMessage(trimmed);
+    final result = await chatService.sendMessage(
+      trimmed,
+      sessionId: current.sessionId,
+    );
 
     final updated = state;
     state = updated.copyWith(
