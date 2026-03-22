@@ -249,64 +249,74 @@ class _ProfileContent extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF0F172A) : Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          border: isHighContrast
-              ? Border.all(color: isDark ? Colors.white : Colors.black, width: 2)
-              : null,
-        ),
-        padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 24),
-                decoration: BoxDecoration(
-                  color: (isDark ? Colors.white : Colors.black).withValues(
-                    alpha: 0.1,
+      builder: (context) => Consumer(
+        builder: (context, ref, child) {
+          final currentProfile = ref.watch(profileProvider).value ?? profile;
+          
+          return Container(
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF0F172A) : Colors.white,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+              border: isHighContrast
+                  ? Border.all(color: isDark ? Colors.white : Colors.black, width: 2)
+                  : null,
+            ),
+            padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 24),
+                    decoration: BoxDecoration(
+                      color: (isDark ? Colors.white : Colors.black).withValues(
+                        alpha: 0.1,
+                      ),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
-                  borderRadius: BorderRadius.circular(2),
                 ),
-              ),
+                Text(
+                  'Select Language',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                const SizedBox(height: 24),
+                _LanguageOption(
+                  label: 'English',
+                  isSelected: currentProfile.language == 'en',
+                  onTap: () async {
+                    final updated = currentProfile.copyWith(language: 'en');
+                    await ref.read(profileProvider.notifier).updateProfile(updated);
+                    // Delay pop slightly to show the checkmark change
+                    await Future.delayed(const Duration(milliseconds: 300));
+                    if (context.mounted) Navigator.pop(context);
+                  },
+                  isDark: isDark,
+                  isHighContrast: isHighContrast,
+                ),
+                const SizedBox(height: 12),
+                _LanguageOption(
+                  label: 'Portuguese',
+                  isSelected: currentProfile.language == 'pt',
+                  onTap: () async {
+                    final updated = currentProfile.copyWith(language: 'pt');
+                    await ref.read(profileProvider.notifier).updateProfile(updated);
+                    // Delay pop slightly to show the checkmark change
+                    await Future.delayed(const Duration(milliseconds: 300));
+                    if (context.mounted) Navigator.pop(context);
+                  },
+                  isDark: isDark,
+                  isHighContrast: isHighContrast,
+                ),
+              ],
             ),
-            Text(
-              'Select Language',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const SizedBox(height: 24),
-            _LanguageOption(
-              label: 'English',
-              isSelected: profile.language == 'en',
-              onTap: () async {
-                final updated = profile.copyWith(language: 'en');
-                await ref.read(profileProvider.notifier).updateProfile(updated);
-                if (context.mounted) Navigator.pop(context);
-              },
-              isDark: isDark,
-              isHighContrast: isHighContrast,
-            ),
-            const SizedBox(height: 12),
-            _LanguageOption(
-              label: 'Portuguese',
-              isSelected: profile.language == 'pt',
-              onTap: () async {
-                final updated = profile.copyWith(language: 'pt');
-                await ref.read(profileProvider.notifier).updateProfile(updated);
-                if (context.mounted) Navigator.pop(context);
-              },
-              isDark: isDark,
-              isHighContrast: isHighContrast,
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
